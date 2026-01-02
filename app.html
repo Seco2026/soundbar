@@ -8,6 +8,7 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <style>
     body {
@@ -17,10 +18,12 @@
       text-align: center;
     }
 
+    h2 { margin-top: 5px; }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
+      gap: 24px;
       max-width: 520px;
       margin: auto;
     }
@@ -28,11 +31,13 @@
     .btn {
       aspect-ratio: 1 / 1;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       font-weight: bold;
-      font-size: clamp(14px, 4vw, 22px);
+      font-size: clamp(16px, 4vw, 26px);
       color: white;
       cursor: pointer;
+      padding: 10px;
+      word-break: break-word;
     }
 
     .green { background: #4CAF50; }
@@ -41,10 +46,21 @@
     .orange { background: #FF9800; }
     .purple { background: #9C27B0; }
 
+    #adminPanel {
+      display: none;
+      margin: 20px auto;
+      max-width: 520px;
+      padding: 10px;
+      border: 2px dashed #999;
+      border-radius: 10px;
+    }
+
     #logout {
       margin-top: 20px;
       padding: 12px;
       font-size: 16px;
+      width: 100%;
+      max-width: 520px;
     }
   </style>
 </head>
@@ -52,49 +68,109 @@
 
 <h2>Soundboard</h2>
 
-<div class="grid">
-  <button class="btn green">1</button>
-  <button class="btn green">2</button>
-  <button class="btn green">3</button>
+<div class="grid" id="buttons">
+  <button class="btn green" onclick="playSound(1)">1</button>
+  <button class="btn green" onclick="playSound(2)">2</button>
+  <button class="btn green" onclick="playSound(3)">3</button>
 
-  <button class="btn red">4</button>
-  <button class="btn red">5</button>
-  <button class="btn red">6</button>
+  <button class="btn red" onclick="playSound(4)">4</button>
+  <button class="btn red" onclick="playSound(5)">5</button>
+  <button class="btn red" onclick="playSound(6)">6</button>
 
-  <button class="btn blue">7</button>
-  <button class="btn blue">8</button>
-  <button class="btn blue">9</button>
+  <button class="btn blue" onclick="playSound(7)">7</button>
+  <button class="btn blue" onclick="playSound(8)">8</button>
+  <button class="btn blue" onclick="playSound(9)">9</button>
 
-  <button class="btn orange">10</button>
-  <button class="btn orange">11</button>
-  <button class="btn orange">12</button>
+  <button class="btn orange" onclick="playSound(10)">10</button>
+  <button class="btn orange" onclick="playSound(11)">11</button>
+  <button class="btn orange" onclick="playSound(12)">12</button>
 
-  <button class="btn purple">13</button>
-  <button class="btn purple">14</button>
-  <button class="btn purple">15</button>
+  <button class="btn purple" onclick="playSound(13)">13</button>
+  <button class="btn purple" onclick="playSound(14)">14</button>
+  <button class="btn purple" onclick="playSound(15)">15</button>
+</div>
+
+<!-- 🔐 ADMIN -->
+<div id="adminPanel">
+  <h3>Admin – byt ljud</h3>
+  <select id="buttonNumber">
+    <option value="">Välj knapp</option>
+    <script>
+      for (let i = 1; i <= 15; i++) {
+        document.write(`<option value="${i}">Knapp ${i}</option>`);
+      }
+    </script>
+  </select>
+  <br><br>
+  <input type="file" id="fileInput" accept="audio/*">
+  <br><br>
+  <button onclick="uploadSound()">Ladda upp ljud</button>
 </div>
 
 <button id="logout" onclick="logout()">Logga ut</button>
 
 <script>
-  // 🔥 Firebase config (SAME!)
+  // 🔥 Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
     authDomain: "savehof26.firebaseapp.com",
-    projectId: "savehof26"
+    projectId: "savehof26",
+    storageBucket: "savehof26.firebasestorage.app"
   };
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
+  const storage = firebase.storage();
 
-  // 🔒 SKYDD – INGEN LOOP
+  let currentAudio = null;
+
+  // 🔊 Spela / stoppa ljud
+  function playSound(nr) {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+      return;
+    }
+    currentAudio = new Audio(`sounds/${nr}`);
+    currentAudio.play();
+    currentAudio.onended = () => currentAudio = null;
+  }
+
+  // 🔐 Admin-koll
   auth.onAuthStateChanged(user => {
     if (!user) {
       window.location.replace("index.html");
+      return;
+    }
+
+    if (user.email === "2014supporter-admin@soundbar.se") {
+      document.getElementById("adminPanel").style.display = "block";
     }
   });
 
-  // 🚪 Logga ut
+  // ⬆️ Ladda upp ljud
+  function uploadSound() {
+    const nr = document.getElementById("buttonNumber").value;
+    const file = document.getElementById("fileInput").files[0];
+
+    if (!nr || !file) {
+      alert("Välj knapp och ljudfil");
+      return;
+    }
+
+    const audio = document.createElement("audio");
+    audio.src = URL.createObjectURL(file);
+    audio.onloadedmetadata = () => {
+      if (audio.duration > 15) {
+        alert("Ljudet är längre än 15 sekunder");
+        return;
+      }
+
+      storage.ref(`sounds/${nr}`).put(file)
+        .then(() => alert("Ljud uppdaterat!"));
+    };
+  }
+
   function logout() {
     auth.signOut().then(() => {
       window.location.replace("index.html");
