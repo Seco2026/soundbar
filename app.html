@@ -5,42 +5,39 @@
   <title>Soundboard</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       padding: 20px;
-      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    h1 {
-      text-align: center;
-    }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr); /* 3 knappar per rad */
-      grid-gap: 20px; /* samma avstånd mellan alla knappar */
-      max-width: 660px;
-      margin: 20px auto;
+      grid-template-columns: repeat(3, 120px);
+      grid-gap: 15px;
+      margin-bottom: 30px;
     }
-    button.sound-btn {
-      aspect-ratio: 1 / 1; /* kvadratisk */
-      font-size: 20px;
+
+    .sound-btn {
+      width: 120px;
+      height: 120px;
+      font-size: 16px;
       border: none;
       border-radius: 10px;
-      cursor: pointer;
       color: white;
-      width: 100%;
+      cursor: pointer;
     }
-    .green { background-color: #4CAF50; }
-    .red { background-color: #f44336; }
-    .blue { background-color: #2196F3; }
-    .orange { background-color: #ff9800; }
-    .purple { background-color: #9c27b0; }
 
-    #admin-controls {
-      max-width: 660px;
-      margin: 20px auto;
-      text-align: center;
-    }
-    #admin-controls input[type="file"] {
-      margin-top: 10px;
+    /* Färggrupper: 1-3 grön, 4-6 röd, 7-9 blå, 10-12 orange, 13-15 lila */
+    .green { background-color: #4CAF50; }
+    .red { background-color: #F44336; }
+    .blue { background-color: #2196F3; }
+    .orange { background-color: #FF9800; }
+    .purple { background-color: #9C27B0; }
+
+    #upload-section {
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -48,142 +45,102 @@
 
 <h1>Soundboard</h1>
 
-<div class="grid" id="button-grid"></div>
+<div class="grid">
+  <!-- 15 knappar -->
+  <button class="sound-btn green" data-id="1">Knapp 1</button>
+  <button class="sound-btn green" data-id="2">Knapp 2</button>
+  <button class="sound-btn green" data-id="3">Knapp 3</button>
 
-<div id="admin-controls" style="display:none;">
-  <h3>Admin: Byt ljud</h3>
-  <label for="select-button">Välj knapp:</label>
-  <select id="select-button"></select><br><br>
-  <input type="file" id="upload-file" accept="audio/*"><br><br>
-  <button onclick="uploadSound()">Ladda upp ljud</button>
-  <p id="upload-message" style="color:green;"></p>
+  <button class="sound-btn red" data-id="4">Knapp 4</button>
+  <button class="sound-btn red" data-id="5">Knapp 5</button>
+  <button class="sound-btn red" data-id="6">Knapp 6</button>
+
+  <button class="sound-btn blue" data-id="7">Knapp 7</button>
+  <button class="sound-btn blue" data-id="8">Knapp 8</button>
+  <button class="sound-btn blue" data-id="9">Knapp 9</button>
+
+  <button class="sound-btn orange" data-id="10">Knapp 10</button>
+  <button class="sound-btn orange" data-id="11">Knapp 11</button>
+  <button class="sound-btn orange" data-id="12">Knapp 12</button>
+
+  <button class="sound-btn purple" data-id="13">Knapp 13</button>
+  <button class="sound-btn purple" data-id="14">Knapp 14</button>
+  <button class="sound-btn purple" data-id="15">Knapp 15</button>
 </div>
 
-<button style="display:block; margin:20px auto;" onclick="logout()">Logga ut</button>
-
-<!-- Firebase CDN -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<!-- Admin: Byt ljud -->
+<div id="upload-section">
+  <input type="file" id="upload-file" accept="audio/*">
+  <input type="number" id="btn-number" placeholder="Knappnummer (1-15)" min="1" max="15">
+  <button onclick="uploadAudio()">Byt ljud</button>
+  <p id="upload-message" style="color:red;"></p>
+</div>
 
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
-    authDomain: "savehof26.firebaseapp.com",
-    projectId: "savehof26",
-    storageBucket: "savehof26.firebasestorage.app",
-    messagingSenderId: "127568718392",
-    appId: "1:127568718392:web:312399049492078e6254cd"
-  };
+  // Skapa ett objekt för ljuden
+  const sounds = {};
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-  const storage = firebase.storage();
+  // Hantera knapptryck
+  document.querySelectorAll('.sound-btn').forEach(btn => {
+    let audio = null;  // kopplat ljud
 
-  // --- Kontrollera inloggning ---
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = "index.html";
-    } else {
-      const adminEmails = ["2014supporter-admin@soundbar.se"];
-      if(adminEmails.includes(user.email)) {
-        document.getElementById("admin-controls").style.display = "block";
-      }
-      loadButtons();
-    }
-  });
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (!sounds[id]) return;
 
-  const buttonColors = ["green","green","green","red","red","red","blue","blue","blue","orange","orange","orange","purple","purple","purple"];
-  const buttonCount = 15;
-  const activeAudio = {}; // håller koll på ljudobjekt
-
-  function loadButtons() {
-    const grid = document.getElementById("button-grid");
-    grid.innerHTML = "";
-    const select = document.getElementById("select-button");
-    select.innerHTML = "";
-    for(let i=0;i<buttonCount;i++){
-      const btn = document.createElement("button");
-      btn.classList.add("sound-btn");
-      btn.classList.add(buttonColors[i]);
-      btn.id = "btn-"+i;
-      btn.innerText = "Knapp "+(i+1);
-
-      db.collection("buttons").doc("btn-"+i).get().then(doc=>{
-        if(doc.exists){
-          btn.dataset.soundUrl = doc.data().url;
-        } else {
-          btn.dataset.soundUrl = "";
-        }
-      });
-
-      btn.addEventListener("click",()=>{
-        const url = btn.dataset.soundUrl;
-        if(!url) return;
-
-        // Om ljud spelas → stoppa det och returnera
-        if(activeAudio[i] && !activeAudio[i].paused){
-          activeAudio[i].pause();
-          activeAudio[i].currentTime = 0;
-          return; // nästa tryck startar ljudet från början
-        }
-
-        // Starta nytt ljud
-        const audio = new Audio(url);
-        activeAudio[i] = audio;
-        audio.play();
-
-        // Automatisk stopp efter 15 sekunder
-        setTimeout(()=>audio.pause(), 15000);
-      });
-
-      grid.appendChild(btn);
-
-      const option = document.createElement("option");
-      option.value = i;
-      option.innerText = "Knapp "+(i+1);
-      select.appendChild(option);
-    }
-  }
-
-  // --- Admin laddar upp ljud ---
-  function uploadSound() {
-    const fileInput = document.getElementById("upload-file");
-    const selected = document.getElementById("select-button").value;
-    if(!fileInput.files[0]){
-      alert("Välj en ljudfil först!");
-      return;
-    }
-
-    const file = fileInput.files[0];
-
-    // Kontrollera längd på ljudfil
-    const tempAudio = new Audio(URL.createObjectURL(file));
-    tempAudio.addEventListener("loadedmetadata", () => {
-      if(tempAudio.duration > 15){
-        alert("Ljudfilen är för lång! Max 15 sekunder.");
+      // Om ljud redan spelas -> stoppas
+      if (audio && !audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
         return;
       }
 
-      const storageRef = storage.ref("sounds/"+file.name);
-      storageRef.put(file).then(snapshot=>{
-        snapshot.ref.getDownloadURL().then(url=>{
-          db.collection("buttons").doc("btn-"+selected).set({url:url}).then(()=>{
-            document.getElementById("upload-message").innerText = "Ljudet är uppdaterat!";
-            loadButtons();
-          });
-        });
-      });
-
+      // Skapa nytt Audio-objekt och spela
+      audio = new Audio(sounds[id]);
+      audio.play();
     });
-  }
+  });
 
-  function logout() {
-    auth.signOut().then(()=>{ window.location.href="index.html"; });
+  // Admin: Ladda upp ljud
+  async function uploadAudio() {
+    const fileInput = document.getElementById('upload-file');
+    const file = fileInput.files[0];
+    const btnNum = document.getElementById('btn-number').value;
+
+    if (!file) {
+      document.getElementById('upload-message').innerText = "Välj en ljudfil!";
+      return;
+    }
+
+    if (!btnNum || btnNum < 1 || btnNum > 15) {
+      document.getElementById('upload-message').innerText = "Ange ett giltigt knappnummer (1-15)!";
+      return;
+    }
+
+    // Skapa audio för att kolla längd
+    const audioCheck = document.createElement('audio');
+    audioCheck.src = URL.createObjectURL(file);
+
+    audioCheck.addEventListener('loadedmetadata', () => {
+      if (audioCheck.duration > 15) {
+        document.getElementById('upload-message').innerText = 
+          `Ljudet är för långt (${Math.round(audioCheck.duration)} sek). Max 15 sekunder!`;
+        return;
+      }
+
+      // Ljudet godkänt
+      document.getElementById('upload-message').innerText = `Ljudet laddat för Knapp ${btnNum} (${Math.round(audioCheck.duration)} sek)`;
+
+      // Lägg till i objektet
+      sounds[btnNum] = audioCheck.src;
+
+      // Valfritt: visa filnamn på knappen
+      const btn = document.querySelector(`.sound-btn[data-id="${btnNum}"]`);
+      btn.textContent = file.name.replace(/\.[^/.]+$/, ""); // utan filändelse
+    });
   }
 </script>
 
 </body>
 </html>
+
