@@ -13,21 +13,20 @@
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 20px;
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background-color: #f2f2f2;
+      background: #f2f2f2;
     }
 
-    .login-box {
+    .box {
       background: white;
       padding: 25px;
       width: 100%;
-      max-width: 400px;
+      max-width: 380px;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
       text-align: center;
     }
 
@@ -36,16 +35,15 @@
       padding: 12px;
       margin-top: 10px;
       font-size: 16px;
-      box-sizing: border-box;
     }
 
     button {
-      background-color: #2196F3;
+      background: #2196F3;
       color: white;
       border: none;
+      font-weight: bold;
       border-radius: 5px;
       cursor: pointer;
-      font-weight: bold;
     }
 
     #message {
@@ -56,19 +54,18 @@
 </head>
 <body>
 
-<div class="login-box">
+<div class="box">
   <h2>Logga in</h2>
 
   <input type="email" id="email" placeholder="E-post">
   <input type="password" id="password" placeholder="Lösenord">
 
   <button onclick="login()">Logga in</button>
-
   <p id="message"></p>
 </div>
 
 <script>
-  /* === FIREBASE CONFIG (DIN RIKTIGA) === */
+  // 🔥 Firebase config (DIN)
   const firebaseConfig = {
     apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
     authDomain: "savehof26.firebaseapp.com",
@@ -78,21 +75,21 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
-  /* === INLOGGNING === */
+  // 🔐 Logga in
   function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        window.location.href = "app.html";
-      })
-      .catch(error => {
-        document.getElementById("message").innerText = error.message;
-      });
+    auth.signInWithEmailAndPassword(
+      document.getElementById("email").value,
+      document.getElementById("password").value
+    )
+    .then(() => {
+      window.location.href = "app.html";
+    })
+    .catch(err => {
+      document.getElementById("message").innerText = err.message;
+    });
   }
 
-  /* === REDAN INLOGGAD → SKICKA TILL APP === */
+  // ✅ Om redan inloggad → gå till app
   auth.onAuthStateChanged(user => {
     if (user) {
       window.location.href = "app.html";
