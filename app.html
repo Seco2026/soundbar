@@ -7,27 +7,43 @@
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
+      padding: 10px;
+      margin: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 150px);
-      grid-gap: 30px;
-      margin-bottom: 30px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      width: 100%;
+      max-width: 500px; /* Begränsa bredd på större skärm */
     }
 
     .sound-btn {
-      width: 150px;
-      height: 150px;
+      width: 100%;
+      padding-bottom: 100%; /* kvadrat */
+      position: relative;
       font-size: 16px;
       border: none;
       border-radius: 10px;
       color: white;
       cursor: pointer;
+    }
+
+    .sound-btn span {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
 
     .green { background-color: #4CAF50; }
@@ -38,34 +54,33 @@
 
     #upload-section {
       margin-top: 20px;
+      width: 100%;
+      max-width: 500px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 100%;
-      max-width: 400px;
+      gap: 10px;
     }
 
-    /* Responsiv design för små skärmar */
+    input, button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    #upload-message {
+      color: red;
+      text-align: center;
+    }
+
+    /* Responsivt */
     @media (max-width: 500px) {
       .grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 knappar per rad */
-        grid-gap: 20px;
-        width: 100%;
+        gap: 10px;
       }
-      .sound-btn {
-        width: 100%;
-        height: 0;
-        padding-bottom: 100%; /* kvadratiska knappar */
-        font-size: 18px;
-      }
-    }
-
-    @media (max-width: 350px) {
-      .grid {
-        grid-template-columns: 1fr; /* 1 knapp per rad */
-      }
-      .sound-btn {
-        font-size: 16px;
+      input, button {
+        font-size: 14px;
       }
     }
   </style>
@@ -75,26 +90,25 @@
 <h1>Soundboard</h1>
 
 <div class="grid">
-  <!-- 15 knappar -->
-  <button class="sound-btn green" data-id="1">Knapp 1</button>
-  <button class="sound-btn green" data-id="2">Knapp 2</button>
-  <button class="sound-btn green" data-id="3">Knapp 3</button>
+  <button class="sound-btn green" data-id="1"><span>Knapp 1</span></button>
+  <button class="sound-btn green" data-id="2"><span>Knapp 2</span></button>
+  <button class="sound-btn green" data-id="3"><span>Knapp 3</span></button>
 
-  <button class="sound-btn red" data-id="4">Knapp 4</button>
-  <button class="sound-btn red" data-id="5">Knapp 5</button>
-  <button class="sound-btn red" data-id="6">Knapp 6</button>
+  <button class="sound-btn red" data-id="4"><span>Knapp 4</span></button>
+  <button class="sound-btn red" data-id="5"><span>Knapp 5</span></button>
+  <button class="sound-btn red" data-id="6"><span>Knapp 6</span></button>
 
-  <button class="sound-btn blue" data-id="7">Knapp 7</button>
-  <button class="sound-btn blue" data-id="8">Knapp 8</button>
-  <button class="sound-btn blue" data-id="9">Knapp 9</button>
+  <button class="sound-btn blue" data-id="7"><span>Knapp 7</span></button>
+  <button class="sound-btn blue" data-id="8"><span>Knapp 8</span></button>
+  <button class="sound-btn blue" data-id="9"><span>Knapp 9</span></button>
 
-  <button class="sound-btn orange" data-id="10">Knapp 10</button>
-  <button class="sound-btn orange" data-id="11">Knapp 11</button>
-  <button class="sound-btn orange" data-id="12">Knapp 12</button>
+  <button class="sound-btn orange" data-id="10"><span>Knapp 10</span></button>
+  <button class="sound-btn orange" data-id="11"><span>Knapp 11</span></button>
+  <button class="sound-btn orange" data-id="12"><span>Knapp 12</span></button>
 
-  <button class="sound-btn purple" data-id="13">Knapp 13</button>
-  <button class="sound-btn purple" data-id="14">Knapp 14</button>
-  <button class="sound-btn purple" data-id="15">Knapp 15</button>
+  <button class="sound-btn purple" data-id="13"><span>Knapp 13</span></button>
+  <button class="sound-btn purple" data-id="14"><span>Knapp 14</span></button>
+  <button class="sound-btn purple" data-id="15"><span>Knapp 15</span></button>
 </div>
 
 <!-- Admin: Byt ljud -->
@@ -102,7 +116,7 @@
   <input type="file" id="upload-file" accept="audio/*">
   <input type="number" id="btn-number" placeholder="Knappnummer (1-15)" min="1" max="15">
   <button onclick="uploadAudio()">Byt ljud</button>
-  <p id="upload-message" style="color:red;"></p>
+  <p id="upload-message"></p>
 </div>
 
 <script>
@@ -156,7 +170,7 @@
 
       sounds[btnNum] = audioCheck.src;
 
-      const btn = document.querySelector(`.sound-btn[data-id="${btnNum}"]`);
+      const btn = document.querySelector(`.sound-btn[data-id="${btnNum}"] span`);
       btn.textContent = file.name.replace(/\.[^/.]+$/, "");
     });
   }
