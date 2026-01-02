@@ -2,72 +2,55 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
-  <title>Soundboard</title>
+  <title>Logga in</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
     }
     h1 {
-      text-align: center;
+      margin-bottom: 20px;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      grid-gap: 15px;
-      max-width: 900px;
-      margin: 20px auto;
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 16px;
+      width: 250px;
     }
-    button.sound-btn {
-      height: 100px;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
+    button {
       cursor: pointer;
+      background-color: #2196F3;
       color: white;
+      border: none;
+      border-radius: 5px;
     }
-    /* Färggrupper */
-    .green { background-color: #4CAF50; }
-    .red { background-color: #f44336; }
-    .blue { background-color: #2196F3; }
-    .orange { background-color: #ff9800; }
-    .purple { background-color: #9c27b0; }
-
-    #admin-controls {
-      max-width: 900px;
-      margin: 20px auto;
-      text-align: center;
+    button:hover {
+      background-color: #1976d2;
     }
-    #admin-controls input[type="file"] {
-      margin-top: 10px;
+    p {
+      color: red;
+      height: 20px;
     }
   </style>
 </head>
 <body>
 
-<h1>Soundboard</h1>
+<h1>Logga in</h1>
 
-<div class="grid" id="button-grid">
-  <!-- Knappar skapas automatiskt med JavaScript -->
-</div>
-
-<div id="admin-controls" style="display:none;">
-  <h3>Admin: Byt ljud</h3>
-  <label for="select-button">Välj knapp:</label>
-  <select id="select-button"></select><br><br>
-  <input type="file" id="upload-file" accept="audio/*"><br><br>
-  <button onclick="uploadSound()">Ladda upp ljud</button>
-  <p id="upload-message" style="color:green;"></p>
-</div>
-
-<button style="display:block; margin:20px auto;" onclick="logout()">Logga ut</button>
+<input type="email" id="email" placeholder="Email"><br>
+<input type="password" id="password" placeholder="Lösenord"><br>
+<button onclick="login()">Logga in</button>
+<p id="message"></p>
 
 <!-- Firebase CDN -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
 <script>
   // --- Firebase-konfiguration ---
@@ -83,91 +66,30 @@
   // Starta Firebase
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
-  const db = firebase.firestore();
-  const storage = firebase.storage();
 
-  // --- Kontrollera inloggning ---
+  // --- Logga in ---
+  function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        // Lyckad inloggning → gå till soundboard
+        window.location.href = "app.html";
+      })
+      .catch((error) => {
+        document.getElementById("message").innerText = error.message;
+      });
+  }
+
+  // --- Kolla om användare redan är inloggad ---
   auth.onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = "index.html"; // Skicka tillbaka till login om inte inloggad
-    } else {
-      // Kolla om användare är admin
-      const adminEmails = ["2014supporter-admin@soundbar.se"];
-      if(adminEmails.includes(user.email)) {
-        document.getElementById("admin-controls").style.display = "block";
-      }
-      loadButtons();
+    if(user){
+      window.location.href = "app.html"; // Skicka direkt om redan inloggad
     }
   });
-
-  // --- Skapa knappar ---
-  const buttonColors = ["green","green","green","red","red","red","blue","blue","blue","orange","orange","orange","purple","purple","purple"];
-  const buttonCount = 15;
-
-  function loadButtons() {
-    const grid = document.getElementById("button-grid");
-    grid.innerHTML = "";
-    const select = document.getElementById("select-button");
-    select.innerHTML = "";
-    for(let i=0;i<buttonCount;i++){
-      // Skapa knapp
-      const btn = document.createElement("button");
-      btn.classList.add("sound-btn");
-      btn.classList.add(buttonColors[i]);
-      btn.id = "btn-"+i;
-      btn.innerText = "Knapp "+(i+1);
-
-      // Hämta ljud-URL från Firestore
-      db.collection("buttons").doc("btn-"+i).get().then(doc=>{
-        if(doc.exists){
-          btn.dataset.soundUrl = doc.data().url;
-        } else {
-          btn.dataset.soundUrl = "";
-        }
-      });
-
-      btn.addEventListener("click",()=>{
-        const url = btn.dataset.soundUrl;
-        if(url) new Audio(url).play();
-      });
-
-      grid.appendChild(btn);
-
-      // Lägg till i admin-select
-      const option = document.createElement("option");
-      option.value = i;
-      option.innerText = "Knapp "+(i+1);
-      select.appendChild(option);
-    }
-  }
-
-  // --- Ladda upp ljud som admin ---
-  function uploadSound() {
-    const fileInput = document.getElementById("upload-file");
-    const selected = document.getElementById("select-button").value;
-    if(!fileInput.files[0]){
-      alert("Välj en ljudfil först!");
-      return;
-    }
-    const file = fileInput.files[0];
-    const storageRef = storage.ref("sounds/"+file.name);
-    storageRef.put(file).then(snapshot=>{
-      snapshot.ref.getDownloadURL().then(url=>{
-        // Spara URL i Firestore
-        db.collection("buttons").doc("btn-"+selected).set({url:url}).then(()=>{
-          document.getElementById("upload-message").innerText = "Ljudet är uppdaterat!";
-          loadButtons(); // Ladda om knappar med nya ljudet
-        });
-      });
-    });
-  }
-
-  // --- Logga ut ---
-  function logout() {
-    auth.signOut().then(()=>{ window.location.href="index.html"; });
-  }
-
 </script>
 
 </body>
 </html>
+
