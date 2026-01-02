@@ -2,6 +2,7 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Soundboard</title>
   <style>
     body {
@@ -14,14 +15,14 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 150px); /* Större knappar */
-      grid-gap: 30px; /* Dubbelt avstånd */
+      grid-template-columns: repeat(3, 150px);
+      grid-gap: 30px;
       margin-bottom: 30px;
     }
 
     .sound-btn {
-      width: 150px;  /* Större */
-      height: 150px; /* Större */
+      width: 150px;
+      height: 150px;
       font-size: 16px;
       border: none;
       border-radius: 10px;
@@ -29,7 +30,6 @@
       cursor: pointer;
     }
 
-    /* Färggrupper: 1-3 grön, 4-6 röd, 7-9 blå, 10-12 orange, 13-15 lila */
     .green { background-color: #4CAF50; }
     .red { background-color: #F44336; }
     .blue { background-color: #2196F3; }
@@ -38,6 +38,35 @@
 
     #upload-section {
       margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* Responsiv design för små skärmar */
+    @media (max-width: 500px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 knappar per rad */
+        grid-gap: 20px;
+        width: 100%;
+      }
+      .sound-btn {
+        width: 100%;
+        height: 0;
+        padding-bottom: 100%; /* kvadratiska knappar */
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 350px) {
+      .grid {
+        grid-template-columns: 1fr; /* 1 knapp per rad */
+      }
+      .sound-btn {
+        font-size: 16px;
+      }
     }
   </style>
 </head>
