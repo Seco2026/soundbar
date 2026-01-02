@@ -1,181 +1,262 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <title>Soundboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Soundboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 10px;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
+<style>
+body {
+  margin:0; padding:0; font-family:Arial,sans-serif;
+  display:flex; flex-direction:column; height:100vh;
+  background:#f2f2f2;
+}
 
-    h2 { margin-top: 5px; }
+/* TOPPBAR */
+#topBar {
+  display:flex; flex-direction:column;
+  background:#fff;
+  width:100%;
+  box-shadow:0 2px 5px rgba(0,0,0,0.15);
+  padding:5px 10px;
+  box-sizing:border-box;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      max-width: 520px;
-      margin: auto;
-    }
+/* ADMIN PANEL */
+#adminPanel {
+  display:none; margin-top:5px;
+  border:1px dashed #999; border-radius:8px; padding:10px;
+  background:#fafafa;
+}
 
-    .btn {
-      aspect-ratio: 1 / 1;
-      border: none;
-      border-radius: 14px;
-      font-weight: bold;
-      font-size: clamp(16px, 4vw, 26px);
-      color: white;
-      cursor: pointer;
-      padding: 10px;
-      word-break: break-word;
-    }
+#adminPanel label, #adminPanel input, #adminPanel select, #adminPanel button {
+  display:block; width:100%; margin:5px 0; box-sizing:border-box;
+  font-size:16px;
+}
 
-    .green { background: #4CAF50; }
-    .red { background: #F44336; }
-    .blue { background: #2196F3; }
-    .orange { background: #FF9800; }
-    .purple { background: #9C27B0; }
+#adminPanel input[type="file"] {
+  padding:5px;
+}
 
-    #adminPanel {
-      display: none;
-      margin: 20px auto;
-      max-width: 520px;
-      padding: 10px;
-      border: 2px dashed #999;
-      border-radius: 10px;
-    }
+/* DRAG & DROP */
+#dropArea {
+  border:2px dashed #ccc; border-radius:10px;
+  padding:15px; text-align:center;
+  color:#666; margin-bottom:10px;
+}
 
-    #logout {
-      margin-top: 20px;
-      padding: 12px;
-      font-size: 16px;
-      width: 100%;
-      max-width: 520px;
-    }
-  </style>
+#dropArea.dragover { border-color:#2196F3; background:#e0f7ff; }
+
+.grid-container {
+  flex-grow:1;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  padding:10px;
+  box-sizing:border-box;
+  overflow:auto;
+}
+
+/* 3D-knappar med glans */
+.btn {
+  position:relative;
+  aspect-ratio:1/1;
+  border:none; border-radius:20px;
+  font-weight:bold; font-size:clamp(18px,4vw,28px);
+  color:white; cursor:pointer;
+  display:flex; justify-content:center; align-items:center;
+  text-align:center; padding:0; word-break:break-word;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 6px 10px rgba(0,0,0,0.1);
+  background: linear-gradient(to top, #666, #999);
+  overflow:hidden;
+  transition: all 0.2s;
+}
+
+.btn.green {background: linear-gradient(to top, #4CAF50 0%, #6FCF70 100%);}
+.btn.red   {background: linear-gradient(to top, #F44336 0%, #FF6F61 100%);}
+.btn.blue  {background: linear-gradient(to top, #2196F3 0%, #4FC3F7 100%);}
+.btn.orange{background: linear-gradient(to top, #FF9800 0%, #FFB74D 100%);}
+.btn.purple{background: linear-gradient(to top, #9C27B0 0%, #BA68C8 100%);}
+
+/* 3D-effekt vid tryck */
+.btn:active { transform: translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.2),0 3px 5px rgba(0,0,0,0.1); }
+
+.btn span { z-index:1; }
+
+/* Svepande glans */
+.btn::before {
+  content:""; position:absolute; top:0; left:-75%;
+  width:50%; height:100%;
+  background: linear-gradient(120deg, rgba(255,255,255,0.3), rgba(255,255,255,0));
+  transform: skewX(-25deg); transition:none;
+}
+
+.btn:hover::before, .btn:active::before { animation: shine 1s forwards; }
+@keyframes shine { 0% {left:-75%;} 100% {left:125%;} }
+
+#logout { margin-top:5px; padding:8px; font-size:16px; cursor:pointer; }
+</style>
 </head>
 <body>
 
-<h2>Soundboard</h2>
+<div id="topBar">
+  <div id="adminPanel">
+    <h3>Admin – Byt ljud och namn</h3>
 
-<div class="grid" id="buttons">
-  <button class="btn green" onclick="playSound(1)">1</button>
-  <button class="btn green" onclick="playSound(2)">2</button>
-  <button class="btn green" onclick="playSound(3)">3</button>
+    <label>Välj knapp:</label>
+    <select id="buttonNumber"></select>
 
-  <button class="btn red" onclick="playSound(4)">4</button>
-  <button class="btn red" onclick="playSound(5)">5</button>
-  <button class="btn red" onclick="playSound(6)">6</button>
+    <label>Ny knapptext:</label>
+    <input type="text" id="newName" placeholder="Nytt namn">
+    <button onclick="changeName()">Spara namn</button>
 
-  <button class="btn blue" onclick="playSound(7)">7</button>
-  <button class="btn blue" onclick="playSound(8)">8</button>
-  <button class="btn blue" onclick="playSound(9)">9</button>
+    <div id="dropArea">Dra och släpp ljudfil här eller klicka nedan</div>
+    <input type="file" id="fileInput" accept="audio/*">
+    <button onclick="previewSound()">Spela upp</button>
+    <button onclick="uploadSound()">Ladda upp ljud</button>
+  </div>
 
-  <button class="btn orange" onclick="playSound(10)">10</button>
-  <button class="btn orange" onclick="playSound(11)">11</button>
-  <button class="btn orange" onclick="playSound(12)">12</button>
-
-  <button class="btn purple" onclick="playSound(13)">13</button>
-  <button class="btn purple" onclick="playSound(14)">14</button>
-  <button class="btn purple" onclick="playSound(15)">15</button>
+  <button id="logout" onclick="logout()">Logga ut</button>
 </div>
 
-<!-- 🔐 ADMIN -->
-<div id="adminPanel">
-  <h3>Admin – byt ljud</h3>
-  <select id="buttonNumber">
-    <option value="">Välj knapp</option>
-    <script>
-      for (let i = 1; i <= 15; i++) {
-        document.write(`<option value="${i}">Knapp ${i}</option>`);
-      }
-    </script>
-  </select>
-  <br><br>
-  <input type="file" id="fileInput" accept="audio/*">
-  <br><br>
-  <button onclick="uploadSound()">Ladda upp ljud</button>
-</div>
-
-<button id="logout" onclick="logout()">Logga ut</button>
+<div class="grid-container" id="buttons"></div>
 
 <script>
-  // 🔥 Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
-    authDomain: "savehof26.firebaseapp.com",
-    projectId: "savehof26",
-    storageBucket: "savehof26.firebasestorage.app"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
+  authDomain: "savehof26.firebaseapp.com",
+  projectId: "savehof26",
+  storageBucket: "savehof26.firebasestorage.app",
+  databaseURL: "https://savehof26-default-rtdb.firebaseio.com/"
+};
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const storage = firebase.storage();
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const storage = firebase.storage();
+const db = firebase.database();
 
-  let currentAudio = null;
+const colors = ["green","green","green","red","red","red","blue","blue","blue","orange","orange","orange","purple","purple","purple"];
+let currentAudio = null;
+let previewAudio = null;
 
-  // 🔊 Spela / stoppa ljud
-  function playSound(nr) {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-      return;
-    }
-    currentAudio = new Audio(`sounds/${nr}`);
-    currentAudio.play();
-    currentAudio.onended = () => currentAudio = null;
+// Fyll knappval i adminpanel
+for(let i=1;i<=15;i++){
+  const option=document.createElement("option");
+  option.value=i; option.textContent=`Knapp ${i}`;
+  document.getElementById("buttonNumber").appendChild(option);
+}
+
+// Skapa knappar
+function loadButtons(){
+  const container=document.getElementById("buttons");
+  container.innerHTML="";
+  for(let i=1;i<=15;i++){
+    const btn=document.createElement("button");
+    btn.className="btn "+colors[i-1];
+    btn.id="btn"+i;
+    const span = document.createElement("span");
+    span.textContent="Knapp "+i;
+    btn.appendChild(span);
+    btn.onclick=()=>playSound(i);
+    container.appendChild(btn);
   }
 
-  // 🔐 Admin-koll
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      window.location.replace("index.html");
-      return;
-    }
-
-    if (user.email === "2014supporter-admin@soundbar.se") {
-      document.getElementById("adminPanel").style.display = "block";
-    }
+  // Hämta namn från Firebase
+  db.ref("buttons").once("value").then(snapshot=>{
+    snapshot.forEach(snap=>{
+      const id = snap.key;
+      const name = snap.val().name;
+      const button = document.getElementById("btn"+id);
+      if(button) button.querySelector("span").textContent=name;
+    });
   });
+}
 
-  // ⬆️ Ladda upp ljud
-  function uploadSound() {
-    const nr = document.getElementById("buttonNumber").value;
-    const file = document.getElementById("fileInput").files[0];
+// Spela ljud
+function playSound(nr){
+  if(currentAudio){ currentAudio.pause(); currentAudio=null; return; }
+  db.ref(`buttons/${nr}/audio`).once("value").then(snap=>{
+    const url = snap.val();
+    if(!url) return;
+    currentAudio = new Audio(url);
+    currentAudio.play();
+    currentAudio.onended=()=>currentAudio=null;
+  });
+}
 
-    if (!nr || !file) {
-      alert("Välj knapp och ljudfil");
-      return;
-    }
+// Byt namn
+function changeName(){
+  const nr=document.getElementById("buttonNumber").value;
+  const newName=document.getElementById("newName").value.trim();
+  if(!nr||!newName){ alert("Välj knapp och fyll i namn"); return; }
+  db.ref("buttons/"+nr).update({name:newName});
+  document.getElementById("btn"+nr).querySelector("span").textContent=newName;
+  document.getElementById("newName").value="";
+}
 
-    const audio = document.createElement("audio");
-    audio.src = URL.createObjectURL(file);
-    audio.onloadedmetadata = () => {
-      if (audio.duration > 15) {
-        alert("Ljudet är längre än 15 sekunder");
-        return;
-      }
+// Förhandslyssning
+function previewSound(){
+  const file=document.getElementById("fileInput").files[0];
+  if(!file){ alert("Välj en ljudfil först"); return; }
 
-      storage.ref(`sounds/${nr}`).put(file)
-        .then(() => alert("Ljud uppdaterat!"));
-    };
+  if(previewAudio){ previewAudio.pause(); previewAudio=null; }
+
+  const audio=document.createElement("audio");
+  audio.src=URL.createObjectURL(file);
+  audio.onloadedmetadata=()=>{
+    if(audio.duration>15){ alert("Ljudet är längre än 15 sekunder"); return; }
+    previewAudio=audio;
+    previewAudio.play();
   }
+}
 
-  function logout() {
-    auth.signOut().then(() => {
-      window.location.replace("index.html");
+// Byt ljud
+function uploadSound(){
+  const nr=document.getElementById("buttonNumber").value;
+  const file=document.getElementById("fileInput").files[0];
+  if(!nr||!file){ alert("Välj knapp och ljudfil"); return; }
+
+  const audio=document.createElement("audio");
+  audio.src=URL.createObjectURL(file);
+  audio.onloadedmetadata=()=>{
+    if(audio.duration>15){ alert("Ljudet är längre än 15 sekunder"); return; }
+    const uploadTask=storage.ref(`sounds/${nr}`).put(file);
+    uploadTask.then(()=>{
+      storage.ref(`sounds/${nr}`).getDownloadURL().then(url=>{
+        db.ref(`buttons/${nr}`).update({audio:url});
+        alert("Ljud uppdaterat!");
+      });
     });
   }
+}
+
+// Drag & Drop
+const dropArea=document.getElementById("dropArea");
+dropArea.addEventListener("dragover", e=>{ e.preventDefault(); dropArea.classList.add("dragover"); });
+dropArea.addEventListener("dragleave", e=>{ e.preventDefault(); dropArea.classList.remove("dragover"); });
+dropArea.addEventListener("drop", e=>{
+  e.preventDefault(); dropArea.classList.remove("dragover");
+  const fileInput=document.getElementById("fileInput");
+  fileInput.files=e.dataTransfer.files;
+});
+
+// Logga ut
+function logout(){ auth.signOut().then(()=>window.location.replace("index.html")); }
+
+// Kontrollera inloggning
+auth.onAuthStateChanged(user=>{
+  if(!user){ window.location.replace("index.html"); return; }
+  if(user.email==="2014supporter-admin@soundbar.se"){
+    document.getElementById("adminPanel").style.display="block";
+  }
+  loadButtons();
+});
 </script>
 
 </body>
