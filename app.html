@@ -14,14 +14,14 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 120px);
-      grid-gap: 15px;
+      grid-template-columns: repeat(3, 150px); /* Större knappar */
+      grid-gap: 30px; /* Dubbelt avstånd */
       margin-bottom: 30px;
     }
 
     .sound-btn {
-      width: 120px;
-      height: 120px;
+      width: 150px;  /* Större */
+      height: 150px; /* Större */
       font-size: 16px;
       border: none;
       border-radius: 10px;
@@ -77,31 +77,26 @@
 </div>
 
 <script>
-  // Skapa ett objekt för ljuden
   const sounds = {};
 
-  // Hantera knapptryck
   document.querySelectorAll('.sound-btn').forEach(btn => {
-    let audio = null;  // kopplat ljud
+    let audio = null;
 
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
       if (!sounds[id]) return;
 
-      // Om ljud redan spelas -> stoppas
       if (audio && !audio.paused) {
         audio.pause();
         audio.currentTime = 0;
         return;
       }
 
-      // Skapa nytt Audio-objekt och spela
       audio = new Audio(sounds[id]);
       audio.play();
     });
   });
 
-  // Admin: Ladda upp ljud
   async function uploadAudio() {
     const fileInput = document.getElementById('upload-file');
     const file = fileInput.files[0];
@@ -117,7 +112,6 @@
       return;
     }
 
-    // Skapa audio för att kolla längd
     const audioCheck = document.createElement('audio');
     audioCheck.src = URL.createObjectURL(file);
 
@@ -128,19 +122,16 @@
         return;
       }
 
-      // Ljudet godkänt
-      document.getElementById('upload-message').innerText = `Ljudet laddat för Knapp ${btnNum} (${Math.round(audioCheck.duration)} sek)`;
+      document.getElementById('upload-message').innerText = 
+        `Ljudet laddat för Knapp ${btnNum} (${Math.round(audioCheck.duration)} sek)`;
 
-      // Lägg till i objektet
       sounds[btnNum] = audioCheck.src;
 
-      // Valfritt: visa filnamn på knappen
       const btn = document.querySelector(`.sound-btn[data-id="${btnNum}"]`);
-      btn.textContent = file.name.replace(/\.[^/.]+$/, ""); // utan filändelse
+      btn.textContent = file.name.replace(/\.[^/.]+$/, "");
     });
   }
 </script>
 
 </body>
 </html>
-
