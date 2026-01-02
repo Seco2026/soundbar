@@ -1,193 +1,172 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8">
-<title>Soundboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Soundboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-<style>
-  /* BODY */
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    background-color: #f0f0f0;
-  }
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background:#f0f0f0; }
+    #topbar {
+      display: flex; align-items:center; justify-content:flex-start;
+      background:#222; color:white; padding:5px 10px; height:50px; box-sizing:border-box;
+    }
+    #topbar input[type=file], #topbar select, #topbar button { margin-left:10px; }
+    #button-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+    .sound-btn {
+      width: 100%;
+      aspect-ratio: 1/1;
+      font-size: 1.2em;
+      font-weight: bold;
+      text-align: center;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #999;
+      transition: all 0.2s;
+      color: white;
+    }
+    .sound-btn:active { box-shadow: 0 2px 0 #666; transform: translateY(3px); }
 
-  /* TOPBAR */
-  .topbar {
-    height: 50px;
-    background-color: #222;
-    color: white;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    box-sizing: border-box;
-    justify-content: flex-start;
-    gap: 10px;
-  }
-
-  .topbar button, .topbar select {
-    font-size: 14px;
-    padding: 5px 8px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-  }
-
-  /* GRID */
-  .button-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding: 10px;
-    flex: 1; /* fyll resterande höjd */
-    box-sizing: border-box;
-    overflow-y: auto;
-  }
-
-  /* KNAPPAR */
-  .sound-btn {
-    width: 100%;
-    aspect-ratio: 1/1; /* kvadrat */
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    background: linear-gradient(to top, #555, #999); /* kromad/glans */
-    transition: transform 0.1s, box-shadow 0.1s;
-  }
-
-  .sound-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  }
-
-  /* Exempel färger i grupper om 3 */
-  .btn1, .btn2, .btn3 { background: linear-gradient(to top, #4caf50, #81c784); } /* grön */
-  .btn4, .btn5, .btn6 { background: linear-gradient(to top, #f44336, #e57373); } /* röd */
-  .btn7, .btn8, .btn9 { background: linear-gradient(to top, #ff9800, #ffb74d); } /* orange */
-  .btn10, .btn11, .btn12 { background: linear-gradient(to top, #2196f3, #64b5f6); } /* blå */
-  .btn13, .btn14, .btn15 { background: linear-gradient(to top, #9c27b0, #ba68c8); } /* lila */
-
-</style>
+    .btn1{background:#4CAF50;}  /* grön */
+    .btn2{background:#4CAF50;}
+    .btn3{background:#4CAF50;}
+    .btn4{background:#f44336;}  /* röd */
+    .btn5{background:#f44336;}
+    .btn6{background:#f44336;}
+    .btn7{background:#FF9800;}  /* orange */
+    .btn8{background:#FF9800;}
+    .btn9{background:#FF9800;}
+    .btn10{background:#2196F3;} /* blå */
+    .btn11{background:#2196F3;}
+    .btn12{background:#2196F3;}
+    .btn13{background:#9C27B0;} /* lila */
+    .btn14{background:#9C27B0;}
+    .btn15{background:#9C27B0;}
+  </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar" id="topbar">
-  <!-- Admin-knappar visas här via JavaScript -->
+<div id="topbar" style="display:none;">
+  Admin:
+  <select id="select-btn">
+    <option value="">Välj knapp</option>
+    <option value="0">Knapp 1</option>
+    <option value="1">Knapp 2</option>
+    <option value="2">Knapp 3</option>
+    <option value="3">Knapp 4</option>
+    <option value="4">Knapp 5</option>
+    <option value="5">Knapp 6</option>
+    <option value="6">Knapp 7</option>
+    <option value="7">Knapp 8</option>
+    <option value="8">Knapp 9</option>
+    <option value="9">Knapp 10</option>
+    <option value="10">Knapp 11</option>
+    <option value="11">Knapp 12</option>
+    <option value="12">Knapp 13</option>
+    <option value="13">Knapp 14</option>
+    <option value="14">Knapp 15</option>
+  </select>
+  <input type="file" id="file-input" accept="audio/*">
+  <button onclick="uploadSound()">Byt ljud</button>
 </div>
 
-<!-- KNAPPSATS -->
-<div class="button-grid" id="buttonGrid">
-  <button class="sound-btn btn1" data-sound="ljud1.wav">Knapp 1</button>
-  <button class="sound-btn btn2" data-sound="ljud2.wav">Knapp 2</button>
-  <button class="sound-btn btn3" data-sound="ljud3.wav">Knapp 3</button>
-  <button class="sound-btn btn4" data-sound="ljud4.wav">Knapp 4</button>
-  <button class="sound-btn btn5" data-sound="ljud5.wav">Knapp 5</button>
-  <button class="sound-btn btn6" data-sound="ljud6.wav">Knapp 6</button>
-  <button class="sound-btn btn7" data-sound="ljud7.wav">Knapp 7</button>
-  <button class="sound-btn btn8" data-sound="ljud8.wav">Knapp 8</button>
-  <button class="sound-btn btn9" data-sound="ljud9.wav">Knapp 9</button>
-  <button class="sound-btn btn10" data-sound="ljud10.wav">Knapp 10</button>
-  <button class="sound-btn btn11" data-sound="ljud11.wav">Knapp 11</button>
-  <button class="sound-btn btn12" data-sound="ljud12.wav">Knapp 12</button>
-  <button class="sound-btn btn13" data-sound="ljud13.wav">Knapp 13</button>
-  <button class="sound-btn btn14" data-sound="ljud14.wav">Knapp 14</button>
-  <button class="sound-btn btn15" data-sound="ljud15.wav">Knapp 15</button>
+<div id="button-container">
+  <button class="sound-btn btn1" data-sound="">Knapp 1</button>
+  <button class="sound-btn btn2" data-sound="">Knapp 2</button>
+  <button class="sound-btn btn3" data-sound="">Knapp 3</button>
+  <button class="sound-btn btn4" data-sound="">Knapp 4</button>
+  <button class="sound-btn btn5" data-sound="">Knapp 5</button>
+  <button class="sound-btn btn6" data-sound="">Knapp 6</button>
+  <button class="sound-btn btn7" data-sound="">Knapp 7</button>
+  <button class="sound-btn btn8" data-sound="">Knapp 8</button>
+  <button class="sound-btn btn9" data-sound="">Knapp 9</button>
+  <button class="sound-btn btn10" data-sound="">Knapp 10</button>
+  <button class="sound-btn btn11" data-sound="">Knapp 11</button>
+  <button class="sound-btn btn12" data-sound="">Knapp 12</button>
+  <button class="sound-btn btn13" data-sound="">Knapp 13</button>
+  <button class="sound-btn btn14" data-sound="">Knapp 14</button>
+  <button class="sound-btn btn15" data-sound="">Knapp 15</button>
 </div>
 
 <script>
-  // FIREBASE CONFIG
+  // FIREBASE
   const firebaseConfig = {
     apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
     authDomain: "savehof26.firebaseapp.com",
-    projectId: "savehof26"
+    projectId: "savehof26",
+    storageBucket: "savehof26.appspot.com",
+    messagingSenderId: "127568718392",
+    appId: "1:127568718392:web:312399049492078e6254cd"
   };
-
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const storage = firebase.storage();
 
-  let isAdmin = false;
   const adminEmail = "2014supporter-admin@soundbar.se";
 
-  // Kolla inloggad användare
+  let currentAudio = null;
+
+  // Inloggad → visa/hide adminbar
   auth.onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = "index.html"; // ej inloggad → login
-    } else {
-      if (user.email === adminEmail) {
-        isAdmin = true;
-        setupAdminUI();
-      }
+    if(!user) { window.location.href="index.html"; return; }
+    if(user.email === adminEmail) {
+      document.getElementById("topbar").style.display = "flex";
     }
   });
 
-  function setupAdminUI() {
-    const topbar = document.getElementById("topbar");
-    topbar.innerHTML = `
-      <button onclick="logout()">Logga ut</button>
-      <label>Välj knapp:
-        <select id="adminSelect">
-          ${Array.from({length:15},(_,i)=>`<option value="${i}">Knapp ${i+1}</option>`).join('')}
-        </select>
-      </label>
-      <input type="file" id="fileInput">
-      <button onclick="updateSound()">Byt ljud</button>
-    `;
-  }
+  // Spela/stoppa ljud
+  document.querySelectorAll(".sound-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const url = btn.getAttribute("data-sound");
+      if(!url) return;
 
-  function logout() {
-    auth.signOut().then(() => window.location.href = "index.html");
-  }
-
-  // KNAPP-FUNKTION
-  let currentAudio = null;
-
-  document.querySelectorAll(".sound-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (currentAudio && !currentAudio.paused) {
+      if(currentAudio && !currentAudio.paused && currentAudio.src === url){
         currentAudio.pause();
         currentAudio.currentTime = 0;
-        currentAudio = null;
-        return;
+      } else {
+        if(currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+        currentAudio = new Audio(url);
+        currentAudio.play();
+        setTimeout(()=>{ currentAudio.pause(); currentAudio.currentTime = 0; },15000); // max 15 sek
       }
-      const soundFile = btn.getAttribute("data-sound");
-      currentAudio = new Audio(soundFile);
-      currentAudio.play();
-      setTimeout(()=>{ currentAudio=null; }, 15000); // max 15s
     });
   });
 
-  // ADMIN BYTE AV LJUD
-  function updateSound() {
-    const select = document.getElementById("adminSelect");
-    const fileInput = document.getElementById("fileInput");
-    if (!fileInput.files[0]) { alert("Välj fil!"); return; }
-    const file = fileInput.files[0];
+  // Admin: byt ljud
+  function uploadSound(){
+    const fileInput = document.getElementById("file-input");
+    const select = document.getElementById("select-btn");
     const idx = select.value;
+    if(!idx || !fileInput.files[0]) { alert("Välj knapp och fil!"); return; }
 
-    const storageRef = storage.ref(`sounds/${file.name}`);
-    storageRef.put(file).then(() => {
-      document.querySelectorAll(".sound-btn")[idx].setAttribute("data-sound", `sounds/${file.name}`);
-      alert("Ljud uppdaterat!");
-    });
+    const file = fileInput.files[0];
+    if(file.duration && file.duration>15){ alert("Ljudet får max vara 15 sekunder"); return; }
+
+    const storageRef = storage.ref("sounds/"+file.name);
+    const uploadTask = storageRef.put(file);
+
+    uploadTask.on('state_changed',
+      null,
+      error => { alert("Fel vid uppladdning: "+error.message); },
+      ()=>{
+        uploadTask.snapshot.ref.getDownloadURL().then(url=>{
+          const btn = document.querySelectorAll(".sound-btn")[idx];
+          btn.setAttribute("data-sound", url);
+          alert("Ljud uppdaterat!");
+        });
+      }
+    );
   }
 </script>
 </body>
