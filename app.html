@@ -53,6 +53,7 @@ body {
 
 #dropArea.dragover { border-color:#2196F3; background:#e0f7ff; }
 
+/* GRID KNAPPAR */
 .grid-container {
   flex-grow:1;
   display:grid;
@@ -63,7 +64,7 @@ body {
   overflow:auto;
 }
 
-/* 3D-knappar med glans */
+/* 3D-knappar med glans och rundade hörn */
 .btn {
   position:relative;
   aspect-ratio:1/1;
@@ -73,7 +74,6 @@ body {
   display:flex; justify-content:center; align-items:center;
   text-align:center; padding:0; word-break:break-word;
   box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 6px 10px rgba(0,0,0,0.1);
-  background: linear-gradient(to top, #666, #999);
   overflow:hidden;
   transition: all 0.2s;
 }
@@ -87,9 +87,7 @@ body {
 /* 3D-effekt vid tryck */
 .btn:active { transform: translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.2),0 3px 5px rgba(0,0,0,0.1); }
 
-.btn span { z-index:1; }
-
-/* Svepande glans */
+/* Glans */
 .btn::before {
   content:""; position:absolute; top:0; left:-75%;
   width:50%; height:100%;
@@ -100,6 +98,9 @@ body {
 .btn:hover::before, .btn:active::before { animation: shine 1s forwards; }
 @keyframes shine { 0% {left:-75%;} 100% {left:125%;} }
 
+.btn span { z-index:1; }
+
+/* Logga ut */
 #logout { margin-top:5px; padding:8px; font-size:16px; cursor:pointer; }
 </style>
 </head>
@@ -128,6 +129,7 @@ body {
 <div class="grid-container" id="buttons"></div>
 
 <script>
+/* === FIREBASE === */
 const firebaseConfig = {
   apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
   authDomain: "savehof26.firebaseapp.com",
@@ -145,14 +147,14 @@ const colors = ["green","green","green","red","red","red","blue","blue","blue","
 let currentAudio = null;
 let previewAudio = null;
 
-// Fyll knappval i adminpanel
+/* === Fyll knappval i adminpanel === */
 for(let i=1;i<=15;i++){
   const option=document.createElement("option");
   option.value=i; option.textContent=`Knapp ${i}`;
   document.getElementById("buttonNumber").appendChild(option);
 }
 
-// Skapa knappar
+/* === Skapa knappar === */
 function loadButtons(){
   const container=document.getElementById("buttons");
   container.innerHTML="";
@@ -167,7 +169,6 @@ function loadButtons(){
     container.appendChild(btn);
   }
 
-  // Hämta namn från Firebase
   db.ref("buttons").once("value").then(snapshot=>{
     snapshot.forEach(snap=>{
       const id = snap.key;
@@ -178,7 +179,7 @@ function loadButtons(){
   });
 }
 
-// Spela ljud
+/* === Spela ljud med start/stop === */
 function playSound(nr){
   if(currentAudio){ currentAudio.pause(); currentAudio=null; return; }
   db.ref(`buttons/${nr}/audio`).once("value").then(snap=>{
@@ -190,7 +191,7 @@ function playSound(nr){
   });
 }
 
-// Byt namn
+/* === Byt namn på knapp === */
 function changeName(){
   const nr=document.getElementById("buttonNumber").value;
   const newName=document.getElementById("newName").value.trim();
@@ -200,7 +201,7 @@ function changeName(){
   document.getElementById("newName").value="";
 }
 
-// Förhandslyssning
+/* === Förhandslyssna ljud === */
 function previewSound(){
   const file=document.getElementById("fileInput").files[0];
   if(!file){ alert("Välj en ljudfil först"); return; }
@@ -216,7 +217,7 @@ function previewSound(){
   }
 }
 
-// Byt ljud
+/* === Ladda upp ljud till knapp === */
 function uploadSound(){
   const nr=document.getElementById("buttonNumber").value;
   const file=document.getElementById("fileInput").files[0];
@@ -236,7 +237,7 @@ function uploadSound(){
   }
 }
 
-// Drag & Drop
+/* === Drag & Drop === */
 const dropArea=document.getElementById("dropArea");
 dropArea.addEventListener("dragover", e=>{ e.preventDefault(); dropArea.classList.add("dragover"); });
 dropArea.addEventListener("dragleave", e=>{ e.preventDefault(); dropArea.classList.remove("dragover"); });
@@ -246,10 +247,10 @@ dropArea.addEventListener("drop", e=>{
   fileInput.files=e.dataTransfer.files;
 });
 
-// Logga ut
+/* === Logga ut === */
 function logout(){ auth.signOut().then(()=>window.location.replace("index.html")); }
 
-// Kontrollera inloggning
+/* === Kontrollera inloggning och visa adminpanel === */
 auth.onAuthStateChanged(user=>{
   if(!user){ window.location.replace("index.html"); return; }
   if(user.email==="2014supporter-admin@soundbar.se"){
