@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Logga in</title>
+</head>
+<body>
+
+<h1>Logga in</h1>
+
+<!-- Fält för e-post och lösenord -->
+<input type="email" id="email" placeholder="Email"><br><br>
+<input type="password" id="password" placeholder="Lösenord"><br><br>
+<button onclick="login()">Logga in</button>
+<p id="message" style="color:red;"></p>
+
+<!-- Ladda Firebase via CDN -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+  // Din Firebase-konfiguration – byt INTE bort något nu, den är färdig
+  const firebaseConfig = {
+    apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
+    authDomain: "savehof26.firebaseapp.com",
+    projectId: "savehof26",
+    storageBucket: "savehof26.firebasestorage.app",
+    messagingSenderId: "127568718392",
+    appId: "1:127568718392:web:312399049492078e6254cd"
+  };
+
+  // Starta Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+
+  // Funktion för att logga in
+  function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        // Lyckad inloggning → gå till index.html
+        window.location.href = "index.html";
+      })
+      .catch((error) => {
+        document.getElementById("message").innerText = error.message;
+      });
+  }
+</script>
+
+</body>
+</html>

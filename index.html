@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Supporter Soundboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1, h2 { text-align: center; }
+
+    #buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    #buttons button {
+      height: 60px;
+      font-size: 18px;
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 8px;
+      color: white;
+      border: none;
+      transition: background 0.2s;
+    }
+
+    #buttons button:hover { opacity: 0.8; }
+
+    .group1 { background-color: #4CAF50; }
+    .group2 { background-color: #f44336; }
+    .group3 { background-color: #2196F3; }
+    .group4 { background-color: #FF9800; }
+    .group5 { background-color: #9C27B0; }
+
+    #adminPanel { 
+      margin-top: 20px; 
+      text-align:center; 
+      border:1px solid #ccc; 
+      padding:10px; 
+      border-radius:8px; 
+      background-color:#f9f9f9; 
+      display: none; 
+    }
+
+    #logoutBtn { 
+      float: right; 
+      padding: 5px 10px; 
+      cursor: pointer; 
+      font-size: 14px; 
+    }
+  </style>
+</head>
+<body>
+
+<h1>Supporter Soundboard</h1>
+<div id="loginStatus"></div>
+<button id="logoutBtn" onclick="logout()">Logga ut</button>
+
+<div id="adminPanel">
+  <h2>Admin: Lägg till ljud</h2>
+  <input type="file" id="fileInput" accept=".mp3,.wav"><br><br>
+  <button onclick="uploadSound()">Ladda upp</button>
+  <p id="uploadMessage" style="color:green;"></p>
+</div>
+
+<h2>Ljudknappar</h2>
+<div id="buttons"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<script>
+  // Firebase-konfiguration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
+    authDomain: "savehof26.firebaseapp.com",
+    projectId: "savehof26",
+    storageBucket: "savehof26.firebasestorage.app",
+    messagingSenderId: "127568718392",
+    appId: "1:127568718392:web:312399049492078e6254cd"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const storage = firebase.storage();
+
+  // Admin-email
+  const adminEmails = ["2014supporter-admin@soundbar.se"];
+  // Lista med alla supporter-användare (kan läggas till om du vill checka)
+  const supporterEmails = [
+    "foralder@soundbar.se",
+    "foralder2@soundbar.se",
+    "foralder3@soundbar.se",
+    "foralder4@soundbar.se",
+    "foralder5@soundbar.se"
+  ];
+
+  let currentUser = null;
+
+  // Logga ut-funktion
+  function logout() {
+    auth.signOut().then(() => {
+      localStorage.removeItem("loginTime");
+      window.location.href = "login.html";
+    });
+  }
+
+  // Kontrollera inloggning och automatisk utloggning efter 12 timmar
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user;
+
+      // Spara inloggningstid om det inte finns
+      if (!localStorage.getItem("loginTime")) {
+        localStorage.setItem("loginTime", Date.now());
+      }
+
+      const loginTime = parseInt(localStorage.getItem("loginTime"));
+      const now = Date.now();
+      const twelveHours = 12 * 60 * 60 * 1000;
+
+      if (now - loginTime > twelveHours) {
+        logout();
+        return;
+      }
+
+      document.getElementById("loginStatus").innerText = "Inloggad som: " + user.email;
+
+      // Visa adminpanelen endast om e-posten finns i adminEmails
+      if (adminEmails.includes(user.email)) {
+        document.getElementById("adminPanel").style.display = "block";
+      }
+
+      loadButtons();
+    } else {
+      window.location.href = "login.html";
+    }
+  });
+
+  // Ladda knappar
+  function loadButtons() {
+    const buttonsDiv = document.getElementById("buttons");
+    buttonsDiv.innerHTML = "";
+    const groups = ["group1","group2","group3","group4","group5"];
+    let groupIndex = 0;
+
+    // Skapa 15 knappar som exempel
+    for (let i=1; i<=15; i++) {
+      const btn = document.createElement("button");
+      btn.innerText = "Knapp " + i;
+      btn.classList.add(groups[groupIndex]);
+      btn.onclick = () => alert("Ljud för Knapp " + i + " inte lagt till än!");
+      buttonsDiv.appendChild(btn);
+      if (i % 3 === 0) groupIndex++;
+    }
+
+    // Hämta uppladdade ljud från Firestore
+    db.collection("sounds").get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const btn = document.createElement("button");
+        btn.innerText = data.name;
+        btn.onclick = () => playSound(data.fileUrl);
+        buttonsDiv.appendChild(btn);
+      });
+    });
+  }
+
+  function playSound(url) {
+    const audio = new Audio(url);
+    audio.play();
+  }
+
+  // Endast admin kan ladda upp ljud
+  function uploadSound() {
+    if (!adminEmails.includes(currentUser.email)) {
+      alert("Endast admin kan ladda upp ljud!");
+      return;
+    }
+    const file = document.getElementById("fileInput").files[0];
+    if (!file) return alert("Välj en fil först!");
+    const storageRef = storage.ref("sounds/" + file.name);
+    storageRef.put(file).then(() => {
+      storageRef.getDownloadURL().then(url => {
+        db.collection("sounds").add({ name:file.name, fileUrl:url }).then(() => {
+          document.getElementById("uploadMessage").innerText = "Uppladdat!";
+          loadButtons();
+        });
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
