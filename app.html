@@ -2,8 +2,8 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Soundboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -11,189 +11,94 @@
 
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
       padding: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      font-family: Arial, sans-serif;
+      text-align: center;
     }
 
-    h1 {
-      margin: 10px 0 15px 0;
-    }
-
-    /* === KNAPPRUTNÄT === */
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
-      width: 100%;
       max-width: 520px;
+      margin: auto;
     }
 
-    .sound-btn {
+    .btn {
       aspect-ratio: 1 / 1;
       border: none;
       border-radius: 12px;
-      cursor: pointer;
-
-      /* TEXT */
       font-weight: bold;
-      color: white;
-      text-align: center;
-      padding: 10px;
-
-      /* CENTRERING */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      /* AUTOMATISK TEXTSTORLEK */
       font-size: clamp(14px, 4vw, 22px);
-      word-break: break-word;
+      color: white;
+      cursor: pointer;
     }
 
-    /* FÄRGER */
-    .green { background-color: #4CAF50; }
-    .red { background-color: #F44336; }
-    .blue { background-color: #2196F3; }
-    .orange { background-color: #FF9800; }
-    .purple { background-color: #9C27B0; }
+    .green { background: #4CAF50; }
+    .red { background: #F44336; }
+    .blue { background: #2196F3; }
+    .orange { background: #FF9800; }
+    .purple { background: #9C27B0; }
 
-    /* === ADMIN === */
-    #upload-section {
-      margin-top: 25px;
-      width: 100%;
-      max-width: 520px;
-      display: none; /* VISAS BARA FÖR ADMIN */
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    input, button {
+    #logout {
+      margin-top: 20px;
       padding: 12px;
       font-size: 16px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    #upload-message {
-      color: red;
-      text-align: center;
     }
   </style>
 </head>
 <body>
 
-<h1>Soundboard</h1>
+<h2>Soundboard</h2>
 
 <div class="grid">
-  <button class="sound-btn green" data-id="1">Knapp 1</button>
-  <button class="sound-btn green" data-id="2">Knapp 2</button>
-  <button class="sound-btn green" data-id="3">Knapp 3</button>
+  <button class="btn green">1</button>
+  <button class="btn green">2</button>
+  <button class="btn green">3</button>
 
-  <button class="sound-btn red" data-id="4">Knapp 4</button>
-  <button class="sound-btn red" data-id="5">Knapp 5</button>
-  <button class="sound-btn red" data-id="6">Knapp 6</button>
+  <button class="btn red">4</button>
+  <button class="btn red">5</button>
+  <button class="btn red">6</button>
 
-  <button class="sound-btn blue" data-id="7">Knapp 7</button>
-  <button class="sound-btn blue" data-id="8">Knapp 8</button>
-  <button class="sound-btn blue" data-id="9">Knapp 9</button>
+  <button class="btn blue">7</button>
+  <button class="btn blue">8</button>
+  <button class="btn blue">9</button>
 
-  <button class="sound-btn orange" data-id="10">Knapp 10</button>
-  <button class="sound-btn orange" data-id="11">Knapp 11</button>
-  <button class="sound-btn orange" data-id="12">Knapp 12</button>
+  <button class="btn orange">10</button>
+  <button class="btn orange">11</button>
+  <button class="btn orange">12</button>
 
-  <button class="sound-btn purple" data-id="13">Knapp 13</button>
-  <button class="sound-btn purple" data-id="14">Knapp 14</button>
-  <button class="sound-btn purple" data-id="15">Knapp 15</button>
+  <button class="btn purple">13</button>
+  <button class="btn purple">14</button>
+  <button class="btn purple">15</button>
 </div>
 
-<!-- ADMIN: BYT LJUD -->
-<div id="upload-section">
-  <input type="file" id="upload-file" accept="audio/*">
-  <input type="number" id="btn-number" placeholder="Knappnummer (1–15)" min="1" max="15">
-  <button onclick="uploadAudio()">Byt ljud</button>
-  <p id="upload-message"></p>
-</div>
+<button id="logout" onclick="logout()">Logga ut</button>
 
 <script>
-  /* === FIREBASE CONFIG === */
+  // 🔥 Firebase config (SAME!)
   const firebaseConfig = {
-    apiKey: "DIN_API_KEY",
-    authDomain: "DIN_AUTH_DOMAIN",
-    projectId: "DIN_PROJECT_ID"
+    apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
+    authDomain: "savehof26.firebaseapp.com",
+    projectId: "savehof26"
   };
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
-  /* === ADMIN-MAIL === */
-  const adminEmail = "2014supporter-admin@soundbar.se";
-
-  /* === VISA / DÖLJ ADMIN === */
+  // 🔒 SKYDD – INGEN LOOP
   auth.onAuthStateChanged(user => {
     if (!user) {
-      window.location.href = "index.html"; // login
-      return;
-    }
-
-    if (user.email === adminEmail) {
-      document.getElementById("upload-section").style.display = "flex";
+      window.location.replace("index.html");
     }
   });
 
-  /* === LJUD === */
-  const sounds = {};
-
-  document.querySelectorAll('.sound-btn').forEach(btn => {
-    let audio = null;
-
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      if (!sounds[id]) return;
-
-      if (audio && !audio.paused) {
-        audio.pause();
-        audio.currentTime = 0;
-        return;
-      }
-
-      audio = new Audio(sounds[id]);
-      audio.play();
+  // 🚪 Logga ut
+  function logout() {
+    auth.signOut().then(() => {
+      window.location.replace("index.html");
     });
-  });
-
-  /* === ADMIN LADDAR UPP LJUD === */
-  function uploadAudio() {
-    const file = document.getElementById("upload-file").files[0];
-    const btnNum = document.getElementById("btn-number").value;
-
-    if (!file) {
-      document.getElementById("upload-message").innerText = "Välj en ljudfil";
-      return;
-    }
-
-    const audioCheck = document.createElement("audio");
-    audioCheck.src = URL.createObjectURL(file);
-
-    audioCheck.onloadedmetadata = () => {
-      if (audioCheck.duration > 15) {
-        document.getElementById("upload-message").innerText =
-          "Ljudet är längre än 15 sekunder";
-        return;
-      }
-
-      sounds[btnNum] = audioCheck.src;
-
-      document.querySelector(
-        `.sound-btn[data-id="${btnNum}"]`
-      ).innerText = file.name.replace(/\.[^/.]+$/, "");
-
-      document.getElementById("upload-message").innerText =
-        "Ljud uppdaterat!";
-    };
   }
 </script>
 
