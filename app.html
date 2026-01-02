@@ -20,19 +20,18 @@ body {
 
 /* TOPPBAR */
 #topBar {
-  display:flex; flex-direction:column;
   background:#fff;
-  width:100%;
   box-shadow:0 2px 5px rgba(0,0,0,0.15);
   padding:5px 10px;
   box-sizing:border-box;
+  flex-shrink:0;
 }
 
 /* ADMIN PANEL */
 #adminPanel {
-  display:none; margin-top:5px;
+  display:none; 
   border:1px dashed #999; border-radius:8px; padding:10px;
-  background:#fafafa;
+  background:#fafafa; max-height:150px; overflow:auto;
 }
 
 #adminPanel label, #adminPanel input, #adminPanel select, #adminPanel button {
@@ -40,25 +39,14 @@ body {
   font-size:16px;
 }
 
-#adminPanel input[type="file"] {
-  padding:5px;
-}
-
-/* DRAG & DROP */
-#dropArea {
-  border:2px dashed #ccc; border-radius:10px;
-  padding:15px; text-align:center;
-  color:#666; margin-bottom:10px;
-}
-
-#dropArea.dragover { border-color:#2196F3; background:#e0f7ff; }
+#adminPanel input[type="file"] { padding:5px; }
 
 /* GRID KNAPPAR */
 .grid-container {
   flex-grow:1;
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:20px;
+  gap:15px;
   padding:10px;
   box-sizing:border-box;
   overflow:auto;
@@ -67,9 +55,10 @@ body {
 /* 3D-knappar med glans och rundade hörn */
 .btn {
   position:relative;
+  width:100%;
   aspect-ratio:1/1;
   border:none; border-radius:20px;
-  font-weight:bold; font-size:clamp(18px,4vw,28px);
+  font-weight:bold; font-size:clamp(16px,4vw,24px);
   color:white; cursor:pointer;
   display:flex; justify-content:center; align-items:center;
   text-align:center; padding:0; word-break:break-word;
@@ -92,9 +81,8 @@ body {
   content:""; position:absolute; top:0; left:-75%;
   width:50%; height:100%;
   background: linear-gradient(120deg, rgba(255,255,255,0.3), rgba(255,255,255,0));
-  transform: skewX(-25deg); transition:none;
+  transform: skewX(-25deg);
 }
-
 .btn:hover::before, .btn:active::before { animation: shine 1s forwards; }
 @keyframes shine { 0% {left:-75%;} 100% {left:125%;} }
 
@@ -117,9 +105,9 @@ body {
     <input type="text" id="newName" placeholder="Nytt namn">
     <button onclick="changeName()">Spara namn</button>
 
-    <div id="dropArea">Dra och släpp ljudfil här eller klicka nedan</div>
+    <label>Ladda upp ljud:</label>
     <input type="file" id="fileInput" accept="audio/*">
-    <button onclick="previewSound()">Spela upp</button>
+    <button onclick="previewSound()">Förhandslyssna</button>
     <button onclick="uploadSound()">Ladda upp ljud</button>
   </div>
 
@@ -236,16 +224,6 @@ function uploadSound(){
     });
   }
 }
-
-/* === Drag & Drop === */
-const dropArea=document.getElementById("dropArea");
-dropArea.addEventListener("dragover", e=>{ e.preventDefault(); dropArea.classList.add("dragover"); });
-dropArea.addEventListener("dragleave", e=>{ e.preventDefault(); dropArea.classList.remove("dragover"); });
-dropArea.addEventListener("drop", e=>{
-  e.preventDefault(); dropArea.classList.remove("dragover");
-  const fileInput=document.getElementById("fileInput");
-  fileInput.files=e.dataTransfer.files;
-});
 
 /* === Logga ut === */
 function logout(){ auth.signOut().then(()=>window.location.replace("index.html")); }
