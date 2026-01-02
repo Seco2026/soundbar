@@ -4,82 +4,83 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Soundboard</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
   <style>
     body {
-      font-family: sans-serif;
-      padding: 10px;
+      font-family: Arial, sans-serif;
       margin: 0;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-sizing: border-box;
     }
 
     h1 {
-      text-align: center;
-      margin-bottom: 10px;
+      margin: 10px 0 15px 0;
     }
 
+    /* === KNAPPRUTNÄT === */
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 15px;
+      gap: 20px;
       width: 100%;
-      max-width: 500px; /* Begränsa bredd på större skärm */
+      max-width: 520px;
     }
 
     .sound-btn {
-      width: 100%;
-      padding-bottom: 100%; /* kvadrat */
-      font-size: 16px;
+      aspect-ratio: 1 / 1;
       border: none;
-      border-radius: 10px;
-      color: white;
+      border-radius: 12px;
       cursor: pointer;
 
-      /* Centrera text */
+      /* TEXT */
+      font-weight: bold;
+      color: white;
+      text-align: center;
+      padding: 10px;
+
+      /* CENTRERING */
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
+
+      /* AUTOMATISK TEXTSTORLEK */
+      font-size: clamp(14px, 4vw, 22px);
+      word-break: break-word;
     }
 
+    /* FÄRGER */
     .green { background-color: #4CAF50; }
     .red { background-color: #F44336; }
     .blue { background-color: #2196F3; }
     .orange { background-color: #FF9800; }
     .purple { background-color: #9C27B0; }
 
+    /* === ADMIN === */
     #upload-section {
-      margin-top: 20px;
+      margin-top: 25px;
       width: 100%;
-      max-width: 500px;
-      display: flex;
+      max-width: 520px;
+      display: none; /* VISAS BARA FÖR ADMIN */
       flex-direction: column;
-      align-items: center;
       gap: 10px;
     }
 
     input, button {
-      width: 100%;
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
+      width: 100%;
       box-sizing: border-box;
     }
 
     #upload-message {
       color: red;
       text-align: center;
-    }
-
-    /* Responsivt */
-    @media (max-width: 500px) {
-      .grid {
-        gap: 10px;
-      }
-      input, button {
-        font-size: 14px;
-      }
     }
   </style>
 </head>
@@ -109,15 +110,41 @@
   <button class="sound-btn purple" data-id="15">Knapp 15</button>
 </div>
 
-<!-- Admin: Byt ljud -->
+<!-- ADMIN: BYT LJUD -->
 <div id="upload-section">
   <input type="file" id="upload-file" accept="audio/*">
-  <input type="number" id="btn-number" placeholder="Knappnummer (1-15)" min="1" max="15">
+  <input type="number" id="btn-number" placeholder="Knappnummer (1–15)" min="1" max="15">
   <button onclick="uploadAudio()">Byt ljud</button>
   <p id="upload-message"></p>
 </div>
 
 <script>
+  /* === FIREBASE CONFIG === */
+  const firebaseConfig = {
+    apiKey: "DIN_API_KEY",
+    authDomain: "DIN_AUTH_DOMAIN",
+    projectId: "DIN_PROJECT_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  /* === ADMIN-MAIL === */
+  const adminEmail = "2014supporter-admin@soundbar.se";
+
+  /* === VISA / DÖLJ ADMIN === */
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = "index.html"; // login
+      return;
+    }
+
+    if (user.email === adminEmail) {
+      document.getElementById("upload-section").style.display = "flex";
+    }
+  });
+
+  /* === LJUD === */
   const sounds = {};
 
   document.querySelectorAll('.sound-btn').forEach(btn => {
@@ -138,39 +165,35 @@
     });
   });
 
-  async function uploadAudio() {
-    const fileInput = document.getElementById('upload-file');
-    const file = fileInput.files[0];
-    const btnNum = document.getElementById('btn-number').value;
+  /* === ADMIN LADDAR UPP LJUD === */
+  function uploadAudio() {
+    const file = document.getElementById("upload-file").files[0];
+    const btnNum = document.getElementById("btn-number").value;
 
     if (!file) {
-      document.getElementById('upload-message').innerText = "Välj en ljudfil!";
+      document.getElementById("upload-message").innerText = "Välj en ljudfil";
       return;
     }
 
-    if (!btnNum || btnNum < 1 || btnNum > 15) {
-      document.getElementById('upload-message').innerText = "Ange ett giltigt knappnummer (1-15)!";
-      return;
-    }
-
-    const audioCheck = document.createElement('audio');
+    const audioCheck = document.createElement("audio");
     audioCheck.src = URL.createObjectURL(file);
 
-    audioCheck.addEventListener('loadedmetadata', () => {
+    audioCheck.onloadedmetadata = () => {
       if (audioCheck.duration > 15) {
-        document.getElementById('upload-message').innerText = 
-          `Ljudet är för långt (${Math.round(audioCheck.duration)} sek). Max 15 sekunder!`;
+        document.getElementById("upload-message").innerText =
+          "Ljudet är längre än 15 sekunder";
         return;
       }
 
-      document.getElementById('upload-message').innerText = 
-        `Ljudet laddat för Knapp ${btnNum} (${Math.round(audioCheck.duration)} sek)`;
-
       sounds[btnNum] = audioCheck.src;
 
-      const btn = document.querySelector(`.sound-btn[data-id="${btnNum}"]`);
-      btn.textContent = file.name.replace(/\.[^/.]+$/, "");
-    });
+      document.querySelector(
+        `.sound-btn[data-id="${btnNum}"]`
+      ).innerText = file.name.replace(/\.[^/.]+$/, "");
+
+      document.getElementById("upload-message").innerText =
+        "Ljud uppdaterat!";
+    };
   }
 </script>
 
