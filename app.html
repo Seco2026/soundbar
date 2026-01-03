@@ -27,16 +27,16 @@ body {
   color:white;
   display:none;
   align-items:center;
-  padding:5px;
-  gap:5px;
+  gap:6px;
+  padding:6px;
 }
 
 #grid {
   flex:1;
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding:10px;
+  gap:12px;
+  padding:12px;
 }
 
 .sound-btn {
@@ -47,12 +47,12 @@ body {
   font-size:18px;
   color:white;
   cursor:pointer;
-  box-shadow:0 5px 8px rgba(0,0,0,0.3);
+  box-shadow:0 6px 10px rgba(0,0,0,0.35);
 }
 
 .green{background:linear-gradient(#7CFC90,#2E8B57);}
-.red{background:linear-gradient(#FF7F7F,#C62828);}
-.blue{background:linear-gradient(#6EC6FF,#1565C0);}
+.red{background:linear-gradient(#FF8A80,#C62828);}
+.blue{background:linear-gradient(#82B1FF,#1565C0);}
 .orange{background:linear-gradient(#FFD180,#EF6C00);}
 .purple{background:linear-gradient(#CE93D8,#6A1B9A);}
 </style>
@@ -60,98 +60,136 @@ body {
 
 <body>
 
+<!-- ADMIN BAR -->
 <div id="topbar">
   <select id="btnSelect"></select>
   <input type="file" id="fileInput" accept="audio/*">
   <button onclick="uploadSound()">Byt ljud</button>
 </div>
 
+<!-- KNAPPAR -->
 <div id="grid"></div>
 
 <script>
-/* === FIREBASE === */
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
   authDomain: "savehof26.firebaseapp.com",
   projectId: "savehof26",
-  databaseURL: "https://savehof26-default-rtdb.firebaseio.com",
+  databaseURL: "https://savehof26-default-rtdb.europe-west1.firebasedatabase.app",
   storageBucket: "savehof26.appspot.com"
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db = firebase.database();
 const storage = firebase.storage();
 
+/* ================= SETTINGS ================= */
 const adminEmail = "2014supporter-admin@soundbar.se";
-const colors = ["green","green","green","red","red","red","blue","blue","blue","orange","orange","orange","purple","purple","purple"];
+const colors = [
+  "green","green","green",
+  "red","red","red",
+  "blue","blue","blue",
+  "orange","orange","orange",
+  "purple","purple","purple"
+];
 
 let currentAudio = null;
 
-/* === SKAPA KNAPPAR === */
+/* ================= SKAPA KNAPPAR ================= */
 const grid = document.getElementById("grid");
-for(let i=1;i<=15;i++){
-  const btn=document.createElement("button");
-  btn.className=`sound-btn ${colors[i-1]}`;
-  btn.textContent="Knapp "+i;
-  btn.onclick=()=>playSound(i);
+const btnSelect = document.getElementById("btnSelect");
+
+for (let i = 1; i <= 15; i++) {
+  const btn = document.createElement("button");
+  btn.className = "sound-btn " + colors[i-1];
+  btn.textContent = "Knapp " + i;
+  btn.onclick = () => playSound(i);
   grid.appendChild(btn);
 
-  const opt=document.createElement("option");
-  opt.value=i;
-  opt.textContent="Knapp "+i;
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = "Knapp " + i;
   btnSelect.appendChild(opt);
 }
 
-/* === SPELA LJUD === */
-function playSound(nr){
-  if(currentAudio){
+/* ================= SPELA LJUD ================= */
+function playSound(nr) {
+  if (currentAudio) {
     currentAudio.pause();
-    currentAudio=null;
+    currentAudio = null;
     return;
   }
-  db.ref("buttons/"+nr).once("value").then(snap=>{
-    const url=snap.val();
-    if(!url) return;
-    currentAudio=new Audio(url);
+
+  db.ref("buttons/" + nr).once("value").then(snapshot => {
+    const url = snapshot.val();
+    if (!url) {
+      alert("Inget ljud kopplat till knappen ännu");
+      return;
+    }
+    currentAudio = new Audio(url);
     currentAudio.play();
-    currentAudio.onended=()=>currentAudio=null;
+    currentAudio.onended = () => currentAudio = null;
   });
 }
 
-/* === ADMIN: LADDA UPP LJUD === */
-function uploadSound(){
-  const nr=btnSelect.value;
-  const file=fileInput.files[0];
-  if(!nr||!file){ alert("Välj knapp och fil"); return; }
+/* ================= ADMIN: UPPLADDNING ================= */
+function uploadSound() {
+  alert("Upload startar");
 
-  const audio=document.createElement("audio");
-  audio.src=URL.createObjectURL(file);
-  audio.onloadedmetadata=()=>{
-    if(audio.duration>15){
+  const nr = btnSelect.value;
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!nr || !file) {
+    alert("Välj både knapp och fil");
+    return;
+  }
+
+  const testAudio = document.createElement("audio");
+  testAudio.src = URL.createObjectURL(file);
+
+  testAudio.onloadedmetadata = () => {
+    alert("Ljudlängd: " + Math.round(testAudio.duration) + " sek");
+
+    if (testAudio.duration > 15) {
       alert("Ljudet är längre än 15 sekunder");
       return;
     }
 
-    const ref=storage.ref("sounds/"+nr);
-    ref.put(file).then(()=>{
-      ref.getDownloadURL().then(url=>{
-        db.ref("buttons/"+nr).set(url);
-        alert("Ljud uppdaterat!");
+    const ref = storage.ref("sounds/knapp_" + nr);
+
+    ref.put(file)
+      .then(() => {
+        alert("Fil uppladdad till Storage");
+        return ref.getDownloadURL();
+      })
+      .then(url => {
+        alert("URL hämtad – sparar i databasen");
+        return db.ref("buttons/" + nr).set(url);
+      })
+      .then(() => {
+        alert("KLART! Ljudet är uppdaterat");
+      })
+      .catch(err => {
+        alert("FEL: " + err.message);
       });
-    });
   };
 }
 
-/* === INLOGGNING === */
-auth.onAuthStateChanged(user=>{
-  if(!user){ location.href="index.html"; return; }
-  if(user.email===adminEmail){
-    document.getElementById("topbar").style.display="flex";
+/* ================= AUTH ================= */
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    location.href = "index.html";
+    return;
+  }
+
+  if (user.email === adminEmail) {
+    document.getElementById("topbar").style.display = "flex";
   }
 });
 </script>
 
 </body>
 </html>
-
