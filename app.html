@@ -1,28 +1,48 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <title>Soundboard DEBUG</title>
+<meta charset="UTF-8">
+<title>Soundboard</title>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-  <style>
-    body { font-family: Arial; margin: 0; }
-    #topbar { background:#222; color:white; padding:10px; display:flex; gap:10px; }
-    #adminControls { display:none; gap:5px; }
-    button { padding:10px; }
-  </style>
+<style>
+/* --- Grundlayout --- */
+body { font-family: Arial, margin: 0; background: #f0f0f0; display:flex; flex-direction:column; min-height:100vh; }
+#topbar {
+  background: #222; color: white; padding: 10px; display:flex; justify-content: space-between; align-items: center; flex-wrap:wrap;
+}
+#adminControls { display:none; gap:10px; align-items:center; flex-wrap:wrap; }
+button { 
+  cursor:pointer; border:none; border-radius:15px; 
+  font-size:16px; font-weight:bold; color:white; 
+  box-shadow: 0 4px #999; 
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+button:active { transform: translateY(4px); box-shadow: 0 0 #999; }
+
+/* --- Grid --- */
+#grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(80px,1fr)); 
+  gap: 15px; 
+  padding: 20px; 
+  flex-grow:1;
+}
+
+/* --- Inputfält --- */
+input[type=file], select, #uploadBtn { padding:8px; font-size:14px; border-radius:5px; border:none; }
+#uploadBtn { background:#28a745; color:white; }
+</style>
 </head>
 
 <body>
-
 <div id="topbar">
   <span id="userInfo">Ej inloggad</span>
-
   <div id="adminControls">
     <select id="btnSelect"></select>
     <input type="file" id="fileInput" accept="audio/*">
@@ -34,10 +54,9 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-
   console.log("✅ SCRIPT LADDAT");
 
-  /******** FIREBASE ********/
+  // -------- Firebase config ----------
   const firebaseConfig = {
     apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
     authDomain: "savehof26.firebaseapp.com",
@@ -45,105 +64,86 @@ document.addEventListener("DOMContentLoaded", () => {
     projectId: "savehof26",
     storageBucket: "savehof26.appspot.com"
   };
-
   firebase.initializeApp(firebaseConfig);
-
   const auth = firebase.auth();
   const db = firebase.database();
   const storage = firebase.storage();
 
   const ADMIN_EMAIL = "2014supporter-admin@soundbar.se";
 
-  /******** KNAPPAR ********/
   const grid = document.getElementById("grid");
   const btnSelect = document.getElementById("btnSelect");
 
-  for (let i = 1; i <= 3; i++) {
+  const BUTTON_COUNT = 15;
+
+  // --- Färger för grupper om 3 knappar ---
+  const colors = ["#e74c3c","#3498db","#2ecc71","#f1c40f","#9b59b6"];
+
+  const buttons = [];
+
+  // --- Skapa knappar ---
+  for(let i=1;i<=BUTTON_COUNT;i++){
     const btn = document.createElement("button");
-    btn.textContent = "Knapp " + i;
+    btn.textContent = i;
+    
+    // Gruppfärg
+    const colorIndex = Math.floor((i-1)/3); // 1-3=0, 4-6=1 osv
+    btn.style.backgroundColor = colors[colorIndex] || "#95a5a6"; // fallback färg
+    
     btn.onclick = () => playSound(i);
     grid.appendChild(btn);
+    buttons.push(btn);
 
+    // Lägg till option i admin dropdown
     const opt = document.createElement("option");
     opt.value = i;
     opt.textContent = "Knapp " + i;
     btnSelect.appendChild(opt);
   }
 
-  /******** SPELA ********/
-  function playSound(nr) {
-    console.log("▶️ Försöker spela knapp", nr);
-
-    db.ref("buttons/" + nr).once("value")
-      .then(snap => {
-        console.log("DB värde:", snap.val());
-        if (!snap.val()) {
-          alert("Inget ljud sparat");
-          return;
-        }
-        new Audio(snap.val()).play();
+  // --- Spela ljud ---
+  function playSound(nr){
+    db.ref("buttons/"+nr).once("value")
+      .then(snap=>{
+        const url = snap.val();
+        if(!url){ alert("Inget ljud sparat"); return; }
+        new Audio(url).play().catch(e=>console.error("❌ Audio error:",e));
       })
-      .catch(err => console.error("❌ Play error:", err));
+      .catch(err=>console.error("❌ Play error:",err));
   }
 
-  /******** UPPLADDNING ********/
-  function uploadSound() {
-    alert("🔔 UPLOAD-KNAPP TRYCKT");
-    console.log("🔔 uploadSound() startad");
-
+  // --- Upload ljud ---
+  function uploadSound(){
     const nr = btnSelect.value;
     const file = document.getElementById("fileInput").files[0];
+    if(!file){ alert("❌ Ingen fil vald"); return; }
 
-    console.log("Knapp:", nr);
-    console.log("Fil:", file);
-
-    if (!file) {
-      alert("❌ Ingen fil vald");
-      return;
-    }
-
-    const ref = storage.ref("sounds/knapp_" + nr);
-
+    const ref = storage.ref("sounds/knapp_"+nr);
     ref.put(file)
-      .then(() => {
-        console.log("📦 Fil uppladdad");
-        return ref.getDownloadURL();
-      })
-      .then(url => {
-        console.log("🔗 URL:", url);
-        return db.ref("buttons/" + nr).set(url);
-      })
-      .then(() => {
-        alert("✅ LJUD SPARAT");
-      })
-      .catch(err => {
-        console.error("❌ UPLOAD FEL:", err);
-        alert("❌ FEL – se Console");
-      });
+      .then(()=> ref.getDownloadURL())
+      .then(url => db.ref("buttons/"+nr).set(url))
+      .then(()=> alert("✅ LJUD SPARAT"))
+      .catch(err => { console.error("❌ UPLOAD FEL:",err); alert("❌ FEL"); });
   }
 
-  document.getElementById("uploadBtn")
-    .addEventListener("click", uploadSound);
+  document.getElementById("uploadBtn").addEventListener("click", uploadSound);
 
-  /******** AUTH ********/
-  auth.onAuthStateChanged(user => {
-    console.log("👤 Auth state:", user);
-
-    if (!user) {
-      alert("❌ INGEN INLOGGNING");
+  // --- Auth ---
+  auth.onAuthStateChanged(user=>{
+    if(!user){
+      document.getElementById("userInfo").textContent="Ej inloggad";
+      document.getElementById("adminControls").style.display="none";
       return;
     }
-
     document.getElementById("userInfo").textContent = user.email;
-
-    if (user.email === ADMIN_EMAIL) {
-      document.getElementById("adminControls").style.display = "flex";
-      console.log("🟢 ADMIN INLOGGAD");
+    if(user.email===ADMIN_EMAIL){
+      document.getElementById("adminControls").style.display="flex";
+    } else {
+      document.getElementById("adminControls").style.display="none";
     }
   });
 
 });
 </script>
-
 </body>
 </html>
