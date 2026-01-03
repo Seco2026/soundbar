@@ -16,62 +16,64 @@ body {
   margin:0;
   font-family: Arial, sans-serif;
   background:#f0f0f0;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
 }
 
 #topbar {
-  height:50px;
   background:#222;
   color:white;
-  display:none;
+  padding:10px;
+  display:flex;
+  gap:10px;
   align-items:center;
-  gap:6px;
-  padding:6px;
+}
+
+#topbar button {
+  padding:6px 10px;
 }
 
 #grid {
-  flex:1;
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-  padding:12px;
+  grid-template-columns:repeat(3, 1fr);
+  gap:10px;
+  padding:10px;
 }
 
 .sound-btn {
-  aspect-ratio:1/1;
-  border:none;
-  border-radius:18px;
-  font-weight:bold;
+  height:100px;
   font-size:18px;
+  font-weight:bold;
+  border:none;
+  border-radius:12px;
   color:white;
-  cursor:pointer;
-  box-shadow:0 6px 10px rgba(0,0,0,0.35);
 }
 
-.green{background:linear-gradient(#7CFC90,#2E8B57);}
-.red{background:linear-gradient(#FF8A80,#C62828);}
-.blue{background:linear-gradient(#82B1FF,#1565C0);}
-.orange{background:linear-gradient(#FFD180,#EF6C00);}
-.purple{background:linear-gradient(#CE93D8,#6A1B9A);}
+.green { background:green; }
+.red { background:red; }
+.blue { background:blue; }
+.orange { background:orange; }
+.purple { background:purple; }
 </style>
 </head>
 
 <body>
 
-<!-- ADMIN BAR -->
 <div id="topbar">
-  <select id="btnSelect"></select>
-  <input type="file" id="fileInput" accept="audio/*">
-  <button onclick="uploadSound()">Byt ljud</button>
+  <span id="userInfo"></span>
+
+  <!-- ADMIN -->
+  <div id="adminControls" style="display:none;">
+    <select id="btnSelect"></select>
+    <input type="file" id="fileInput" accept="audio/*">
+    <button id="uploadBtn">Byt ljud</button>
+  </div>
+
+  <button onclick="logout()">Logga ut</button>
 </div>
 
-<!-- KNAPPAR -->
 <div id="grid"></div>
 
 <script>
-/* ================= FIREBASE ================= */
+/* ===== FIREBASE ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
   authDomain: "savehof26.firebaseapp.com",
@@ -81,13 +83,15 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const auth = firebase.auth();
 const db = firebase.database();
 const storage = firebase.storage();
 
-/* ================= SETTINGS ================= */
 const adminEmail = "2014supporter-admin@soundbar.se";
+
+let currentAudio = null;
+
+/* ===== SKAPA KNAPPAR ===== */
 const colors = [
   "green","green","green",
   "red","red","red",
@@ -96,97 +100,82 @@ const colors = [
   "purple","purple","purple"
 ];
 
-let currentAudio = null;
-
-/* ================= SKAPA KNAPPAR ================= */
 const grid = document.getElementById("grid");
 const btnSelect = document.getElementById("btnSelect");
 
-for (let i = 1; i <= 15; i++) {
-  const btn = document.createElement("button");
-  btn.className = "sound-btn " + colors[i-1];
-  btn.textContent = "Knapp " + i;
-  btn.onclick = () => playSound(i);
+for (let i=1;i<=15;i++){
+  const btn=document.createElement("button");
+  btn.className="sound-btn "+colors[i-1];
+  btn.innerText="Knapp "+i;
+  btn.onclick=()=>playSound(i);
   grid.appendChild(btn);
 
-  const opt = document.createElement("option");
-  opt.value = i;
-  opt.textContent = "Knapp " + i;
+  const opt=document.createElement("option");
+  opt.value=i;
+  opt.innerText="Knapp "+i;
   btnSelect.appendChild(opt);
 }
 
-/* ================= SPELA LJUD ================= */
-function playSound(nr) {
-  if (currentAudio) {
+/* ===== SPELA LJUD ===== */
+function playSound(nr){
+  if(currentAudio){
     currentAudio.pause();
-    currentAudio = null;
+    currentAudio=null;
     return;
   }
 
-  db.ref("buttons/" + nr).once("value").then(snapshot => {
-    const url = snapshot.val();
-    if (!url) {
-      alert("Inget ljud kopplat till knappen ännu");
-      return;
-    }
-    currentAudio = new Audio(url);
+  db.ref("buttons/"+nr).once("value").then(s=>{
+    const url=s.val();
+    if(!url){ alert("Inget ljud sparat"); return; }
+    currentAudio=new Audio(url);
     currentAudio.play();
-    currentAudio.onended = () => currentAudio = null;
+    currentAudio.onended=()=>currentAudio=null;
   });
 }
 
-/* ================= ADMIN: UPPLADDNING ================= */
-function uploadSound() {
-  alert("Upload startar");
+/* ===== ADMIN UPPLADDNING ===== */
+document.getElementById("uploadBtn").onclick = function(){
+  alert("Upload klickad");
 
   const nr = btnSelect.value;
-  const file = document.getElementById("fileInput").files[0];
+  const file = fileInput.files[0];
+  if(!file){ alert("Ingen fil vald"); return; }
 
-  if (!nr || !file) {
-    alert("Välj både knapp och fil");
-    return;
-  }
+  const audio = document.createElement("audio");
+  audio.src = URL.createObjectURL(file);
 
-  const testAudio = document.createElement("audio");
-  testAudio.src = URL.createObjectURL(file);
-
-  testAudio.onloadedmetadata = () => {
-    alert("Ljudlängd: " + Math.round(testAudio.duration) + " sek");
-
-    if (testAudio.duration > 15) {
-      alert("Ljudet är längre än 15 sekunder");
+  audio.onloadedmetadata = function(){
+    if(audio.duration > 15){
+      alert("Ljudet är för långt");
       return;
     }
 
-    const ref = storage.ref("sounds/knapp_" + nr);
-
+    const ref = storage.ref("sounds/knapp_"+nr);
     ref.put(file)
-      .then(() => {
-        alert("Fil uppladdad till Storage");
-        return ref.getDownloadURL();
+      .then(()=>ref.getDownloadURL())
+      .then(url=>{
+        return db.ref("buttons/"+nr).set(url);
       })
-      .then(url => {
-        alert("URL hämtad – sparar i databasen");
-        return db.ref("buttons/" + nr).set(url);
+      .then(()=>{
+        alert("Ljud sparat!");
       })
-      .then(() => {
-        alert("KLART! Ljudet är uppdaterat");
-      })
-      .catch(err => {
-        alert("FEL: " + err.message);
-      });
+      .catch(e=>alert("Fel: "+e.message));
   };
+};
+
+/* ===== LOGGA UT ===== */
+function logout(){
+  auth.signOut().then(()=>location.href="index.html");
 }
 
-/* ================= AUTH ================= */
-auth.onAuthStateChanged(user => {
-  if (!user) {
-    location.href = "index.html";
-    return;
-  }
+/* ===== AUTH ===== */
+auth.onAuthStateChanged(user=>{
+  if(!user){ location.href="index.html"; return; }
 
-  if (user.email === adminEmail) {
-    document.getElementById("topbar").style.display = "flex";
+  document.getElementById("userInfo").innerText=user.email;
+
+  if(user.email===adminEmail){
+    document.getElementById("adminControls").style.display="flex";
   }
 });
 </script>
