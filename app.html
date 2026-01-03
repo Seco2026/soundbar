@@ -21,6 +21,38 @@ body {
   min-height: 100vh;
 }
 
+/* --- Login sida --- */
+#loginPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 10px;
+}
+#loginPage input {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+#loginPage button {
+  padding: 10px 16px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: none;
+  background: #2980b9;
+  color: white;
+  cursor: pointer;
+}
+
+/* --- App sidan --- */
+#appPage {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 /* --- Topbar --- */
 #topbar {
   background: #222;
@@ -47,19 +79,19 @@ body {
 #uploadBtn { background:#28a745; color:white; }
 #logoutBtn { background:#c0392b; color:white; }
 
-/* --- Grid med 3 kolumner --- */
+/* --- Grid med 3 kolumner, dynamisk storlek --- */
 #grid {
-  display: none; /* göm tills login */
+  display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  padding: 20px;
+  gap: 10px;
+  padding: 10px;
   flex-grow: 1;
 }
 
-/* --- Knappar kvadratiska med 3D-effekt --- */
+/* --- Knappar kvadratiska med 3D-effekt, dynamiska --- */
 #grid button {
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 1 / 1;
   border-radius: 15px;
   border: none;
   font-size: 16px;
@@ -74,48 +106,42 @@ body {
   box-shadow: 0 0 #999;
 }
 
-/* --- Login form --- */
-#loginForm {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-}
-#loginForm input {
-  padding: 5px;
-  font-size: 14px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-#loginForm button {
-  padding: 5px 10px;
-  background: #2980b9;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+/* --- Mobilanpassning textstl --- */
+@media (max-width:600px){
+  #topbar span, #adminControls select, #adminControls input, #adminControls button, #logoutBtn {
+    font-size: 14px;
+    padding: 6px;
+  }
+  #loginPage input, #loginPage button {
+    font-size: 14px;
+    padding: 8px;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<div id="topbar">
-  <span id="userInfo">Ej inloggad</span>
-  <div id="adminControls">
-    <select id="btnSelect"></select>
-    <input type="file" id="fileInput" accept="audio/*">
-    <button id="uploadBtn">Byt ljud</button>
-  </div>
-  <button id="logoutBtn" style="display:none;">Logga ut</button>
-</div>
-
-<div id="loginForm">
+<!-- Login sida -->
+<div id="loginPage">
   <input type="email" id="loginEmail" placeholder="Email">
   <input type="password" id="loginPassword" placeholder="Lösenord">
   <button id="loginBtn">Logga in</button>
 </div>
 
-<div id="grid"></div>
+<!-- App sida -->
+<div id="appPage">
+  <div id="topbar">
+    <span id="userInfo">Ej inloggad</span>
+    <div id="adminControls">
+      <select id="btnSelect"></select>
+      <input type="file" id="fileInput" accept="audio/*">
+      <button id="uploadBtn">Byt ljud</button>
+    </div>
+    <button id="logoutBtn">Logga ut</button>
+  </div>
+  <div id="grid"></div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -134,14 +160,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const ADMIN_EMAIL = "2014supporter-admin@soundbar.se";
 
-  const grid = document.getElementById("grid");
-  const btnSelect = document.getElementById("btnSelect");
-  const adminControls = document.getElementById("adminControls");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const loginForm = document.getElementById("loginForm");
-  const loginBtn = document.getElementById("loginBtn");
+  const loginPage = document.getElementById("loginPage");
   const loginEmail = document.getElementById("loginEmail");
   const loginPassword = document.getElementById("loginPassword");
+  const loginBtn = document.getElementById("loginBtn");
+
+  const appPage = document.getElementById("appPage");
+  const grid = document.getElementById("grid");
+  const adminControls = document.getElementById("adminControls");
+  const btnSelect = document.getElementById("btnSelect");
+  const logoutBtn = document.getElementById("logoutBtn");
 
   const BUTTON_COUNT = 15;
   const colors = ["#e74c3c","#3498db","#2ecc71","#f1c40f","#9b59b6"];
@@ -191,11 +219,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = loginPassword.value;
     auth.signInWithEmailAndPassword(email,password)
       .then(userCred=>{
-        loginForm.style.display="none";
-        grid.style.display="grid";
+        loginPage.style.display="none";
+        appPage.style.display="flex";
         logoutBtn.style.display="inline-block";
         if(userCred.user.email===ADMIN_EMAIL){
           adminControls.style.display="flex";
+        } else {
+          adminControls.style.display="none";
         }
       })
       .catch(err=>{
@@ -208,26 +238,24 @@ document.addEventListener("DOMContentLoaded", () => {
   logoutBtn.addEventListener("click", ()=>{
     auth.signOut().then(()=>{
       alert("✅ Utloggad");
-      loginForm.style.display="flex";
-      grid.style.display="none";
-      adminControls.style.display="none";
-      logoutBtn.style.display="none";
-      loginEmail.value="";
-      loginPassword.value="";
+      loginPage.style.display="flex";
+      appPage.style.display="none";
+      loginEmail.value = "";
+      loginPassword.value = "";
     });
   });
 
   // --- Auth state ---
   auth.onAuthStateChanged(user=>{
     if(user){
-      loginForm.style.display="none";
-      grid.style.display="grid";
+      loginPage.style.display="none";
+      appPage.style.display="flex";
       logoutBtn.style.display="inline-block";
       if(user.email===ADMIN_EMAIL) adminControls.style.display="flex";
+      else adminControls.style.display="none";
     } else {
-      loginForm.style.display="flex";
-      grid.style.display="none";
-      adminControls.style.display="none";
+      loginPage.style.display="flex";
+      appPage.style.display="none";
       logoutBtn.style.display="none";
     }
   });
