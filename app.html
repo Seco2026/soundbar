@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
 <style>
-/* --- Grundlayout --- */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -38,19 +37,20 @@ body {
   align-items: center;
   flex-wrap: wrap;
 }
-input[type=file], select, #uploadBtn, #logoutBtn {
+#adminControls select, #adminControls input, #adminControls button {
   padding: 8px;
   font-size: 14px;
   border-radius: 5px;
   border: none;
+  cursor: pointer;
 }
-#uploadBtn { background:#28a745; color:white; cursor:pointer; }
-#logoutBtn { background:#c0392b; color:white; cursor:pointer; }
+#uploadBtn { background:#28a745; color:white; }
+#logoutBtn { background:#c0392b; color:white; }
 
 /* --- Grid med 3 kolumner --- */
 #grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 knappar per rad */
+  display: none; /* göm tills login */
+  grid-template-columns: repeat(3, 1fr);
   gap: 15px;
   padding: 20px;
   flex-grow: 1;
@@ -59,7 +59,7 @@ input[type=file], select, #uploadBtn, #logoutBtn {
 /* --- Knappar kvadratiska med 3D-effekt --- */
 #grid button {
   width: 100%;
-  aspect-ratio: 1 / 1; /* kvadrat */
+  aspect-ratio: 1/1;
   border-radius: 15px;
   border: none;
   font-size: 16px;
@@ -73,6 +73,27 @@ input[type=file], select, #uploadBtn, #logoutBtn {
   transform: translateY(4px);
   box-shadow: 0 0 #999;
 }
+
+/* --- Login form --- */
+#loginForm {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+#loginForm input {
+  padding: 5px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+#loginForm button {
+  padding: 5px 10px;
+  background: #2980b9;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
 </style>
 </head>
 
@@ -84,17 +105,20 @@ input[type=file], select, #uploadBtn, #logoutBtn {
     <select id="btnSelect"></select>
     <input type="file" id="fileInput" accept="audio/*">
     <button id="uploadBtn">Byt ljud</button>
-    <button id="logoutBtn">Logga ut</button>
   </div>
+  <button id="logoutBtn" style="display:none;">Logga ut</button>
+</div>
+
+<div id="loginForm">
+  <input type="email" id="loginEmail" placeholder="Email">
+  <input type="password" id="loginPassword" placeholder="Lösenord">
+  <button id="loginBtn">Logga in</button>
 </div>
 
 <div id="grid"></div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("✅ SCRIPT LADDAT");
-
-  // --- Firebase config ---
   const firebaseConfig = {
     apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
     authDomain: "savehof26.firebaseapp.com",
@@ -103,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     storageBucket: "savehof26.appspot.com"
   };
   firebase.initializeApp(firebaseConfig);
+
   const auth = firebase.auth();
   const db = firebase.database();
   const storage = firebase.storage();
@@ -111,49 +136,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const grid = document.getElementById("grid");
   const btnSelect = document.getElementById("btnSelect");
+  const adminControls = document.getElementById("adminControls");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const loginForm = document.getElementById("loginForm");
+  const loginBtn = document.getElementById("loginBtn");
+  const loginEmail = document.getElementById("loginEmail");
+  const loginPassword = document.getElementById("loginPassword");
 
   const BUTTON_COUNT = 15;
-  const colors = ["#e74c3c","#3498db","#2ecc71","#f1c40f","#9b59b6"]; // 5 grupper
-
+  const colors = ["#e74c3c","#3498db","#2ecc71","#f1c40f","#9b59b6"];
   const buttons = [];
 
-  // --- Skapa knappar ---
+  // Skapa knappar
   for(let i=1;i<=BUTTON_COUNT;i++){
     const btn = document.createElement("button");
     btn.textContent = i;
-    
-    // Gruppfärg 3 knappar per färg
     const colorIndex = Math.floor((i-1)/3);
     btn.style.backgroundColor = colors[colorIndex] || "#95a5a6";
-
     btn.onclick = () => playSound(i);
     grid.appendChild(btn);
     buttons.push(btn);
 
-    // Admin dropdown
     const opt = document.createElement("option");
     opt.value = i;
     opt.textContent = "Knapp " + i;
     btnSelect.appendChild(opt);
   }
 
-  // --- Spela ljud ---
   function playSound(nr){
     db.ref("buttons/"+nr).once("value")
       .then(snap=>{
         const url = snap.val();
         if(!url){ alert("Inget ljud sparat"); return; }
         new Audio(url).play().catch(e=>console.error("❌ Audio error:",e));
-      })
-      .catch(err=>console.error("❌ Play error:",err));
+      }).catch(err=>console.error("❌ Play error:",err));
   }
 
-  // --- Upload ljud ---
   function uploadSound(){
     const nr = btnSelect.value;
     const file = document.getElementById("fileInput").files[0];
     if(!file){ alert("❌ Ingen fil vald"); return; }
-
     const ref = storage.ref("sounds/knapp_"+nr);
     ref.put(file)
       .then(()=> ref.getDownloadURL())
@@ -163,38 +185,53 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   document.getElementById("uploadBtn").addEventListener("click", uploadSound);
 
-  // --- Logga ut ---
-  const logoutBtn = document.getElementById("logoutBtn");
-  logoutBtn.addEventListener("click", () => {
-    auth.signOut()
-      .then(() => {
-        alert("✅ Utloggad");
-        document.getElementById("adminControls").style.display = "none";
-        document.getElementById("userInfo").textContent = "Ej inloggad";
+  // --- Login ---
+  loginBtn.addEventListener("click", ()=>{
+    const email = loginEmail.value;
+    const password = loginPassword.value;
+    auth.signInWithEmailAndPassword(email,password)
+      .then(userCred=>{
+        loginForm.style.display="none";
+        grid.style.display="grid";
+        logoutBtn.style.display="inline-block";
+        if(userCred.user.email===ADMIN_EMAIL){
+          adminControls.style.display="flex";
+        }
       })
-      .catch(err => {
-        console.error("❌ Logout fel:", err);
-        alert("❌ Fel vid utloggning");
+      .catch(err=>{
+        console.error("❌ Login fel:",err);
+        alert("Fel email eller lösenord");
       });
   });
 
-  // --- Auth ---
-  auth.onAuthStateChanged(user => {
-    if(!user){
-      document.getElementById("userInfo").textContent = "Ej inloggad";
-      document.getElementById("adminControls").style.display = "none";
-      return;
-    }
-    document.getElementById("userInfo").textContent = user.email;
-    if(user.email === ADMIN_EMAIL){
-      document.getElementById("adminControls").style.display = "flex";
-    } else {
-      document.getElementById("adminControls").style.display = "none";
-    }
+  // --- Logout ---
+  logoutBtn.addEventListener("click", ()=>{
+    auth.signOut().then(()=>{
+      alert("✅ Utloggad");
+      loginForm.style.display="flex";
+      grid.style.display="none";
+      adminControls.style.display="none";
+      logoutBtn.style.display="none";
+      loginEmail.value="";
+      loginPassword.value="";
+    });
   });
 
+  // --- Auth state ---
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      loginForm.style.display="none";
+      grid.style.display="grid";
+      logoutBtn.style.display="inline-block";
+      if(user.email===ADMIN_EMAIL) adminControls.style.display="flex";
+    } else {
+      loginForm.style.display="flex";
+      grid.style.display="none";
+      adminControls.style.display="none";
+      logoutBtn.style.display="none";
+    }
+  });
 });
 </script>
-
 </body>
 </html>
