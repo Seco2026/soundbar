@@ -123,15 +123,19 @@
 
     db.ref("buttons/" + nr).once("value").then(s => {
       const url = s.val();
+      console.log("URL för ljud: " + url); // Log URL for debugging
+
       if (!url) {
         alert("Inget ljud sparat för denna knapp!");
         return;
       }
+
       currentAudio = new Audio(url);
       currentAudio.play();
       currentAudio.onended = () => currentAudio = null;
     }).catch(e => {
       alert("Fel vid uppspelning: " + e.message);
+      console.error("Fel vid uppspelning: " + e.message); // Log error for debugging
     });
   }
 
@@ -150,7 +154,7 @@
     audio.src = URL.createObjectURL(file);
 
     audio.onloadedmetadata = () => {
-      console.log("Laddar upp ljud: " + file.name);
+      console.log("Laddar upp ljud: " + file.name); // Log the audio file name
 
       if (audio.duration > 15) {
         alert("Ljudet är för långt");
@@ -159,15 +163,23 @@
 
       const ref = storage.ref("sounds/knapp_" + nr);
       ref.put(file)
-        .then(() => ref.getDownloadURL())
+        .then(() => {
+          console.log("Uppladdning pågår..."); // Log during upload
+          return ref.getDownloadURL();
+        })
         .then(url => {
-          console.log("Ljud uppladdat: " + url);
+          console.log("Ljud uppladdat: " + url); // Log the URL after upload
+          // Save the URL in the database
           return db.ref("buttons/" + nr).set(url);
         })
         .then(() => {
           alert("Ljud sparat!");
+          console.log("Ljud sparat i databasen"); // Log saving confirmation
         })
-        .catch(e => alert("Fel: " + e.message));
+        .catch(e => {
+          alert("Fel vid uppladdning: " + e.message);
+          console.error("Fel vid uppladdning: " + e.message); // Log any upload errors
+        });
     };
   }
 
