@@ -102,7 +102,7 @@ body {
   aspect-ratio: 1 / 1;
   border-radius: 15px;
   border: none;
-  font-size: 72px; /* desktop font */
+  font-size: 72px; 
   font-weight: bold;
   color: white;
   cursor: pointer;
@@ -209,32 +209,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const buttons = [];
 
   const buttonColors = [
-    "linear-gradient(to bottom, #4facfe, #00f2fe)", // blå
-    "linear-gradient(to bottom, #4facfe, #00f2fe)",
-    "linear-gradient(to bottom, #4facfe, #00f2fe)",
-
-    "linear-gradient(to bottom, #f85032, #e73827)", // röd
-    "linear-gradient(to bottom, #f85032, #e73827)",
-    "linear-gradient(to bottom, #f85032, #e73827)",
-
-    "linear-gradient(to bottom, #43e97b, #38f9d7)", // grön
-    "linear-gradient(to bottom, #43e97b, #38f9d7)",
-    "linear-gradient(to bottom, #43e97b, #38f9d7)",
-
-    "linear-gradient(to bottom, #fdeb71, #f8d800)", // gul
-    "linear-gradient(to bottom, #fdeb71, #f8d800)",
-    "linear-gradient(to bottom, #fdeb71, #f8d800)",
-
-    "linear-gradient(to bottom, #a18cd1, #fbc2eb)", // lila
-    "linear-gradient(to bottom, #a18cd1, #fbc2eb)",
-    "linear-gradient(to bottom, #a18cd1, #fbc2eb)"
+    "linear-gradient(to bottom, #4facfe, #00f2fe)", "linear-gradient(to bottom, #4facfe, #00f2fe)", "linear-gradient(to bottom, #4facfe, #00f2fe)",
+    "linear-gradient(to bottom, #f85032, #e73827)", "linear-gradient(to bottom, #f85032, #e73827)", "linear-gradient(to bottom, #f85032, #e73827)",
+    "linear-gradient(to bottom, #43e97b, #38f9d7)", "linear-gradient(to bottom, #43e97b, #38f9d7)", "linear-gradient(to bottom, #43e97b, #38f9d7)",
+    "linear-gradient(to bottom, #fdeb71, #f8d800)", "linear-gradient(to bottom, #fdeb71, #f8d800)", "linear-gradient(to bottom, #fdeb71, #f8d800)",
+    "linear-gradient(to bottom, #a18cd1, #fbc2eb)", "linear-gradient(to bottom, #a18cd1, #fbc2eb)", "linear-gradient(to bottom, #a18cd1, #fbc2eb)"
   ];
 
   // Skapa knappar
   for(let i=1;i<=BUTTON_COUNT;i++){
     const btn = document.createElement("button");
     btn.textContent = i;
-    btn.style.background = buttonColors[i-1] || "#95a5a6";
+    btn.style.background = buttonColors[i-1];
     btn.onclick = () => playSound(i);
     grid.appendChild(btn);
     buttons.push(btn);
@@ -272,17 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = loginEmail.value;
     const password = loginPassword.value;
     auth.signInWithEmailAndPassword(email,password)
-      .then(userCred=>{
-        loginPage.style.display="none";
-        appPage.style.display="flex";
-        logoutBtn.style.display="inline-block";
-        userInfo.textContent = userCred.user.email; // ✅ Visa email
-        if(userCred.user.email===ADMIN_EMAIL){
-          adminControls.style.display="flex";
-        } else {
-          adminControls.style.display="none";
-        }
-      })
       .catch(err=>{
         console.error("❌ Login fel:",err);
         alert("Fel email eller lösenord");
@@ -297,7 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
       appPage.style.display="none";
       loginEmail.value = "";
       loginPassword.value = "";
-      userInfo.textContent = "Ej inloggad"; // ✅ Återställ vid logout
+      userInfo.textContent = "Ej inloggad";
     });
   });
 
@@ -307,14 +282,20 @@ document.addEventListener("DOMContentLoaded", () => {
       loginPage.style.display="none";
       appPage.style.display="flex";
       logoutBtn.style.display="inline-block";
-      userInfo.textContent = user.email; // ✅ Visa email alltid
-      if(user.email===ADMIN_EMAIL) adminControls.style.display="flex";
-      else adminControls.style.display="none";
+
+      // ✅ Visa alltid e-post i topbar
+      userInfo.textContent = user.email;
+
+      if(user.email === ADMIN_EMAIL){
+        adminControls.style.display="flex";
+      } else {
+        adminControls.style.display="none";
+      }
     } else {
       loginPage.style.display="flex";
       appPage.style.display="none";
       logoutBtn.style.display="none";
-      userInfo.textContent = "Ej inloggad"; // ✅ Ej inloggad om ingen
+      userInfo.textContent = "Ej inloggad";
     }
   });
 });
