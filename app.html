@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Soundboard</title>
 
   <!-- Firebase -->
@@ -22,12 +22,18 @@
     }
 
     #topbar {
-      background-color: #222;
+      background: #222;
       color: white;
       padding: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
+    }
+
+    #adminControls {
+      display: none;
+      gap: 8px;
     }
 
     #grid {
@@ -39,182 +45,158 @@
     }
 
     .sound-btn {
-      aspect-ratio: 1/1;
+      aspect-ratio: 1 / 1;
       border: none;
       border-radius: 18px;
-      font-weight: bold;
       font-size: 18px;
+      font-weight: bold;
       color: white;
       cursor: pointer;
       box-shadow: 0 5px 8px rgba(0,0,0,0.3);
     }
 
-    /* Button colors */
-    .green { background: green; }
-    .red { background: red; }
-    .blue { background: blue; }
-    .orange { background: orange; }
-    .purple { background: purple; }
+    .green { background: #2ecc71; }
+    .red { background: #e74c3c; }
+    .blue { background: #3498db; }
+    .orange { background: #f39c12; }
+    .purple { background: #9b59b6; }
   </style>
 </head>
 
 <body>
 
-<!-- Admin bar (only visible for admin) -->
-<div id="topbar">
-  <span id="userInfo"></span>
+  <div id="topbar">
+    <span id="userInfo"></span>
 
-  <div id="adminControls" style="display:none;">
-    <select id="btnSelect"></select>
-    <input type="file" id="fileInput" accept="audio/*">
-    <button id="uploadBtn">Byt ljud</button>
+    <div id="adminControls">
+      <select id="btnSelect"></select>
+      <input type="file" id="fileInput" accept="audio/*">
+      <button id="uploadBtn">Byt ljud</button>
+    </div>
+
+    <button onclick="logout()">Logga ut</button>
   </div>
 
-  <button onclick="logout()">Logga ut</button>
-</div>
+  <div id="grid"></div>
 
-<!-- Sound buttons -->
-<div id="grid"></div>
-
-<script>
-  // Firebase initialization
-  const firebaseConfig = {
-    apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
-    authDomain: "savehof26.firebaseapp.com",
-    projectId: "savehof26",
-    databaseURL: "https://savehof26-default-rtdb.europe-west1.firebasedatabase.app",
-    storageBucket: "savehof26.appspot.com"
-  };
-  firebase.initializeApp(firebaseConfig);
-
-  const auth = firebase.auth();
-  const db = firebase.database();
-  const storage = firebase.storage();
-
-  const adminEmail = "2014supporter-admin@soundbar.se"; // Admin email
-
-  let currentAudio = null;
-
-  // Create sound buttons
-  const colors = ["green", "red", "blue", "orange", "purple"];
-  const grid = document.getElementById("grid");
-  const btnSelect = document.getElementById("btnSelect");
-
-  for (let i = 1; i <= 15; i++) {
-    const btn = document.createElement("button");
-    btn.className = "sound-btn " + colors[i % 5];
-    btn.innerText = "Knapp " + i;
-    btn.onclick = () => playSound(i);
-    grid.appendChild(btn);
-
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.innerText = "Knapp " + i;
-    btnSelect.appendChild(opt);
-  }
-
-  // Play sound on button click
-  function playSound(nr) {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-      return;
-    }
-
-    console.log("Försöker spela ljud för knapp " + nr);
-
-    db.ref("buttons/" + nr).once("value").then(s => {
-      const url = s.val();
-      console.log("URL för ljud: " + url); // Log URL for debugging
-
-      if (!url) {
-        alert("Inget ljud sparat för denna knapp!");
-        return;
-      }
-
-      currentAudio = new Audio(url);
-      currentAudio.play();
-      currentAudio.onended = () => currentAudio = null;
-    }).catch(e => {
-      alert("Fel vid uppspelning: " + e.message);
-      console.error("Fel vid uppspelning: " + e.message); // Log error for debugging
-    });
-  }
-
-  // Admin upload sound
-  function uploadSound() {
-    alert("Upload klickad");
-
-    const nr = btnSelect.value;
-    const file = document.getElementById("fileInput").files[0];
-    if (!nr || !file) {
-      alert("Välj både knapp och fil");
-      console.log("Ingen fil vald eller knapp");
-      return;
-    }
-
-    console.log("Försöker ladda upp fil: " + file.name);
-
-    const audio = document.createElement("audio");
-    audio.src = URL.createObjectURL(file);
-
-    audio.onloadedmetadata = () => {
-      console.log("Laddar upp ljud: " + file.name);
-
-      if (audio.duration > 15) {
-        alert("Ljudet är för långt");
-        console.log("Ljudet är för långt: " + audio.duration);
-        return;
-      }
-
-      const ref = storage.ref("sounds/knapp_" + nr);
-      ref.put(file)
-        .then(() => {
-          console.log("Uppladdning pågår...");
-          return ref.getDownloadURL();
-        })
-        .then(url => {
-          console.log("Ljud uppladdat: " + url); // Log the URL after upload
-
-          // Save the URL in the database
-          return db.ref("buttons/" + nr).set(url)
-            .then(() => {
-              console.log("Ljud sparat i databasen");
-              alert("Ljud sparat!");
-            })
-            .catch(error => {
-              console.error("Fel vid sparande av URL i databasen: ", error);
-              alert("Fel vid sparande av ljud URL.");
-            });
-        })
-        .catch(e => {
-          console.error("Fel vid uppladdning: " + e.message);
-          alert("Fel vid uppladdning: " + e.message); // Error handling during upload
-        });
+  <script>
+    /************ FIREBASE ************/
+    const firebaseConfig = {
+      apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
+      authDomain: "savehof26.firebaseapp.com",
+      databaseURL: "https://savehof26-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "savehof26",
+      storageBucket: "savehof26.appspot.com"
     };
-  }
 
-  // Logout function
-  function logout() {
-    firebase.auth().signOut().then(() => {
-      location.href = "index.html";  // Skickar användaren tillbaka till inloggning
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const storage = firebase.storage();
+
+    const ADMIN_EMAIL = "2014supporter-admin@soundbar.se";
+
+    let currentAudio = null;
+
+    /************ SKAPA KNAPPAR ************/
+    const colors = ["green", "red", "blue", "orange", "purple"];
+    const grid = document.getElementById("grid");
+    const btnSelect = document.getElementById("btnSelect");
+
+    for (let i = 1; i <= 15; i++) {
+      const btn = document.createElement("button");
+      btn.className = `sound-btn ${colors[(i - 1) % colors.length]}`;
+      btn.innerText = `Knapp ${i}`;
+      btn.onclick = () => playSound(i);
+      grid.appendChild(btn);
+
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.innerText = `Knapp ${i}`;
+      btnSelect.appendChild(opt);
+    }
+
+    /************ SPELA LJUD ************/
+    function playSound(nr) {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+        return;
+      }
+
+      db.ref(`buttons/${nr}`).once("value")
+        .then(snapshot => {
+          const url = snapshot.val();
+          if (!url) {
+            alert("Inget ljud sparat för denna knapp");
+            return;
+          }
+
+          currentAudio = new Audio(url);
+          currentAudio.play();
+          currentAudio.onended = () => currentAudio = null;
+        })
+        .catch(err => {
+          alert("Fel vid uppspelning");
+          console.error(err);
+        });
+    }
+
+    /************ UPPLADDNING (ADMIN) ************/
+    function uploadSound() {
+      const nr = btnSelect.value;
+      const file = document.getElementById("fileInput").files[0];
+
+      if (!nr || !file) {
+        alert("Välj knapp och ljudfil");
+        return;
+      }
+
+      const audio = document.createElement("audio");
+      audio.src = URL.createObjectURL(file);
+
+      audio.onloadedmetadata = () => {
+        if (audio.duration > 15) {
+          alert("Ljudet får max vara 15 sekunder");
+          return;
+        }
+
+        const ref = storage.ref(`sounds/knapp_${nr}`);
+
+        ref.put(file)
+          .then(() => ref.getDownloadURL())
+          .then(url => db.ref(`buttons/${nr}`).set(url))
+          .then(() => alert("Ljudet är uppdaterat!"))
+          .catch(err => {
+            alert("Fel vid uppladdning");
+            console.error(err);
+          });
+      };
+    }
+
+    document
+      .getElementById("uploadBtn")
+      .addEventListener("click", uploadSound);
+
+    /************ AUTH ************/
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        location.href = "index.html";
+        return;
+      }
+
+      document.getElementById("userInfo").innerText = user.email;
+
+      if (user.email === ADMIN_EMAIL) {
+        document.getElementById("adminControls").style.display = "flex";
+      }
     });
-  }
 
-  // Auth logic
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      location.href = "index.html";
-      return;
+    function logout() {
+      auth.signOut().then(() => location.href = "index.html");
     }
-
-    document.getElementById("userInfo").innerText = user.email;
-
-    if (user.email === adminEmail) {
-      document.getElementById("adminControls").style.display = "flex";
-    }
-  });
-</script>
+  </script>
 
 </body>
 </html>
