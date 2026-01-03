@@ -61,12 +61,12 @@ body {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 15px; /* större padding */
-  min-height: 100px; /* dubbelt så hög */
+  padding: 20px 15px;
+  min-height: 100px;
   box-sizing: border-box;
 }
 #topbar span {
-  font-size: 20px; /* större text */
+  font-size: 20px;
 }
 #adminControls {
   display: none;
@@ -78,8 +78,8 @@ body {
 #adminControls input,
 #adminControls button,
 #logoutBtn {
-  padding: 14px 20px; /* större knappar */
-  font-size: 18px; /* större text */
+  padding: 14px 20px;
+  font-size: 18px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
@@ -87,7 +87,7 @@ body {
 #uploadBtn { background:#28a745; color:white; }
 #logoutBtn { background:#c0392b; color:white; }
 
-/* --- Grid med 3 kolumner, dynamisk storlek --- */
+/* --- Grid med 3 kolumner --- */
 #grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -102,7 +102,7 @@ body {
   aspect-ratio: 1 / 1;
   border-radius: 15px;
   border: none;
-  font-size: 72px; /* jättestor text */
+  font-size: 72px; /* desktop font */
   font-weight: bold;
   color: white;
   box-shadow: 0 6px #999;
@@ -124,26 +124,33 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 160px; /* extra hög på mobil */
+    min-height: 160px;
     gap: 12px;
     padding: 20px;
   }
   #topbar span {
-    font-size: 22px; /* större användarnamn */
+    font-size: 22px;
   }
   #adminControls select,
   #adminControls input,
   #adminControls button,
   #logoutBtn {
-    font-size: 20px; /* ännu större text */
-    padding: 16px 24px; /* större touch area */
+    font-size: 20px;
+    padding: 16px 24px;
   }
+
   #loginPage input, #loginPage button {
     font-size: 16px;
     padding: 10px;
   }
+
+  /* Knappar på mobil: mindre så alla får plats */
+  #grid {
+    gap: 6px;
+  }
   #grid button {
-    font-size: 48px; /* något mindre än desktop men fortfarande stor */
+    font-size: 36px;
+    aspect-ratio: 1 / 1;
   }
 }
 </style>
