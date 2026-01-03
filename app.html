@@ -203,30 +203,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const adminControls = document.getElementById("adminControls");
   const btnSelect = document.getElementById("btnSelect");
   const logoutBtn = document.getElementById("logoutBtn");
+  const userInfo = document.getElementById("userInfo");
 
   const BUTTON_COUNT = 15;
   const buttons = [];
 
   const buttonColors = [
     "linear-gradient(to bottom, #4facfe, #00f2fe)", // blå
-    "linear-gradient(to bottom, #4facfe, #00f2fe)", // blå
-    "linear-gradient(to bottom, #4facfe, #00f2fe)", // blå
+    "linear-gradient(to bottom, #4facfe, #00f2fe)",
+    "linear-gradient(to bottom, #4facfe, #00f2fe)",
 
     "linear-gradient(to bottom, #f85032, #e73827)", // röd
-    "linear-gradient(to bottom, #f85032, #e73827)", // röd
-    "linear-gradient(to bottom, #f85032, #e73827)", // röd
+    "linear-gradient(to bottom, #f85032, #e73827)",
+    "linear-gradient(to bottom, #f85032, #e73827)",
 
     "linear-gradient(to bottom, #43e97b, #38f9d7)", // grön
-    "linear-gradient(to bottom, #43e97b, #38f9d7)", // grön
-    "linear-gradient(to bottom, #43e97b, #38f9d7)", // grön
+    "linear-gradient(to bottom, #43e97b, #38f9d7)",
+    "linear-gradient(to bottom, #43e97b, #38f9d7)",
 
     "linear-gradient(to bottom, #fdeb71, #f8d800)", // gul
-    "linear-gradient(to bottom, #fdeb71, #f8d800)", // gul
-    "linear-gradient(to bottom, #fdeb71, #f8d800)", // gul
+    "linear-gradient(to bottom, #fdeb71, #f8d800)",
+    "linear-gradient(to bottom, #fdeb71, #f8d800)",
 
     "linear-gradient(to bottom, #a18cd1, #fbc2eb)", // lila
-    "linear-gradient(to bottom, #a18cd1, #fbc2eb)", // lila
-    "linear-gradient(to bottom, #a18cd1, #fbc2eb)"  // lila
+    "linear-gradient(to bottom, #a18cd1, #fbc2eb)",
+    "linear-gradient(to bottom, #a18cd1, #fbc2eb)"
   ];
 
   // Skapa knappar
@@ -275,6 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loginPage.style.display="none";
         appPage.style.display="flex";
         logoutBtn.style.display="inline-block";
+        userInfo.textContent = userCred.user.email; // ✅ Visa email
         if(userCred.user.email===ADMIN_EMAIL){
           adminControls.style.display="flex";
         } else {
@@ -295,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
       appPage.style.display="none";
       loginEmail.value = "";
       loginPassword.value = "";
+      userInfo.textContent = "Ej inloggad"; // ✅ Återställ vid logout
     });
   });
 
@@ -304,12 +307,14 @@ document.addEventListener("DOMContentLoaded", () => {
       loginPage.style.display="none";
       appPage.style.display="flex";
       logoutBtn.style.display="inline-block";
+      userInfo.textContent = user.email; // ✅ Visa email alltid
       if(user.email===ADMIN_EMAIL) adminControls.style.display="flex";
       else adminControls.style.display="none";
     } else {
       loginPage.style.display="flex";
       appPage.style.display="none";
       logoutBtn.style.display="none";
+      userInfo.textContent = "Ej inloggad"; // ✅ Ej inloggad om ingen
     }
   });
 });
