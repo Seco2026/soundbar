@@ -12,35 +12,71 @@
 
 <style>
 /* --- Grundlayout --- */
-body { font-family: Arial, margin: 0; background: #f0f0f0; display:flex; flex-direction:column; min-height:100vh; }
-#topbar {
-  background: #222; color: white; padding: 10px; display:flex; justify-content: space-between; align-items: center; flex-wrap:wrap;
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
-#adminControls { display:none; gap:10px; align-items:center; flex-wrap:wrap; }
-button { 
-  cursor:pointer; border:none; border-radius:15px; 
-  font-size:16px; font-weight:bold; color:white; 
-  box-shadow: 0 4px #999; 
+
+/* --- Topbar --- */
+#topbar {
+  background: #222;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#adminControls {
+  display: none;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+input[type=file], select, #uploadBtn {
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: none;
+}
+#uploadBtn { background:#28a745; color:white; cursor:pointer; }
+
+/* --- Grid med 3 kolumner --- */
+#grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 knappar per rad */
+  gap: 15px;
+  padding: 20px;
+  flex-grow: 1;
+}
+
+/* --- Knappar kvadratiska --- */
+#grid button {
+  width: 100%;
+  aspect-ratio: 1 / 1; /* gör kvadratisk knapp */
+  border-radius: 15px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  box-shadow: 0 4px #999;
+  cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
 }
-button:active { transform: translateY(4px); box-shadow: 0 0 #999; }
-
-/* --- Grid --- */
-#grid { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(80px,1fr)); 
-  gap: 15px; 
-  padding: 20px; 
-  flex-grow:1;
+#grid button:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 #999;
 }
-
-/* --- Inputfält --- */
-input[type=file], select, #uploadBtn { padding:8px; font-size:14px; border-radius:5px; border:none; }
-#uploadBtn { background:#28a745; color:white; }
 </style>
 </head>
 
 <body>
+
 <div id="topbar">
   <span id="userInfo">Ej inloggad</span>
   <div id="adminControls">
@@ -56,7 +92,7 @@ input[type=file], select, #uploadBtn { padding:8px; font-size:14px; border-radiu
 document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ SCRIPT LADDAT");
 
-  // -------- Firebase config ----------
+  // --- Firebase config ---
   const firebaseConfig = {
     apiKey: "AIzaSyCjLYhiEys4dYfGvEJyhrDxCYv4rW-0nh8",
     authDomain: "savehof26.firebaseapp.com",
@@ -75,9 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSelect = document.getElementById("btnSelect");
 
   const BUTTON_COUNT = 15;
-
-  // --- Färger för grupper om 3 knappar ---
-  const colors = ["#e74c3c","#3498db","#2ecc71","#f1c40f","#9b59b6"];
+  const colors = ["#e74c3c","#3498db","#2ecc71","#f1c40f","#9b59b6"]; // 5 grupper
 
   const buttons = [];
 
@@ -86,15 +120,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn = document.createElement("button");
     btn.textContent = i;
     
-    // Gruppfärg
-    const colorIndex = Math.floor((i-1)/3); // 1-3=0, 4-6=1 osv
-    btn.style.backgroundColor = colors[colorIndex] || "#95a5a6"; // fallback färg
-    
+    // Gruppfärg 3 knappar per färg
+    const colorIndex = Math.floor((i-1)/3);
+    btn.style.backgroundColor = colors[colorIndex] || "#95a5a6";
+
     btn.onclick = () => playSound(i);
     grid.appendChild(btn);
     buttons.push(btn);
 
-    // Lägg till option i admin dropdown
+    // Admin dropdown
     const opt = document.createElement("option");
     opt.value = i;
     opt.textContent = "Knapp " + i;
@@ -125,7 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(()=> alert("✅ LJUD SPARAT"))
       .catch(err => { console.error("❌ UPLOAD FEL:",err); alert("❌ FEL"); });
   }
-
   document.getElementById("uploadBtn").addEventListener("click", uploadSound);
 
   // --- Auth ---
@@ -145,5 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
+
 </body>
 </html>
