@@ -12,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
   <style>
-    /* Layout */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
@@ -22,16 +21,15 @@
       flex-direction: column;
     }
 
-    /* Adminbar */
     #topbar {
-      display: flex;
-      justify-content: flex-start;
       background-color: #222;
       color: white;
       padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    /* Button container */
     #grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -40,7 +38,6 @@
       flex-grow: 1;
     }
 
-    /* Sound buttons */
     .sound-btn {
       aspect-ratio: 1/1;
       border: none;
@@ -52,7 +49,7 @@
       box-shadow: 0 5px 8px rgba(0,0,0,0.3);
     }
 
-    /* Colors for groups */
+    /* Button colors */
     .green { background: green; }
     .red { background: red; }
     .blue { background: blue; }
@@ -63,11 +60,17 @@
 
 <body>
 
-<!-- Admin bar (hidden for normal users) -->
-<div id="topbar" style="display: none;">
-  <select id="btnSelect"></select>
-  <input type="file" id="fileInput" accept="audio/*">
-  <button onclick="uploadSound()">Byt ljud</button>
+<!-- Admin bar (only visible for admin) -->
+<div id="topbar">
+  <span id="userInfo"></span>
+
+  <div id="adminControls" style="display:none;">
+    <select id="btnSelect"></select>
+    <input type="file" id="fileInput" accept="audio/*">
+    <button id="uploadBtn">Byt ljud</button>
+  </div>
+
+  <button onclick="logout()">Logga ut</button>
 </div>
 
 <!-- Sound buttons -->
@@ -83,7 +86,7 @@
     storageBucket: "savehof26.appspot.com"
   };
   firebase.initializeApp(firebaseConfig);
-  
+
   const auth = firebase.auth();
   const db = firebase.database();
   const storage = firebase.storage();
@@ -92,7 +95,7 @@
 
   let currentAudio = null;
 
-  // Generate sound buttons
+  // Create sound buttons
   const colors = ["green", "red", "blue", "orange", "purple"];
   const grid = document.getElementById("grid");
   const btnSelect = document.getElementById("btnSelect");
@@ -121,17 +124,21 @@
     db.ref("buttons/" + nr).once("value").then(s => {
       const url = s.val();
       if (!url) {
-        alert("Inget ljud sparat");
+        alert("Inget ljud sparat för denna knapp!");
         return;
       }
       currentAudio = new Audio(url);
       currentAudio.play();
       currentAudio.onended = () => currentAudio = null;
+    }).catch(e => {
+      alert("Fel vid uppspelning: " + e.message);
     });
   }
 
   // Admin upload sound
   function uploadSound() {
+    alert("Upload klickad");
+
     const nr = btnSelect.value;
     const file = document.getElementById("fileInput").files[0];
     if (!nr || !file) {
@@ -143,6 +150,8 @@
     audio.src = URL.createObjectURL(file);
 
     audio.onloadedmetadata = () => {
+      console.log("Laddar upp ljud: " + file.name);
+
       if (audio.duration > 15) {
         alert("Ljudet är för långt");
         return;
@@ -152,6 +161,7 @@
       ref.put(file)
         .then(() => ref.getDownloadURL())
         .then(url => {
+          console.log("Ljud uppladdat: " + url);
           return db.ref("buttons/" + nr).set(url);
         })
         .then(() => {
@@ -161,6 +171,13 @@
     };
   }
 
+  // Logout function
+  function logout() {
+    firebase.auth().signOut().then(() => {
+      location.href = "index.html";  // Skickar användaren tillbaka till inloggning
+    });
+  }
+
   // Auth logic
   auth.onAuthStateChanged(user => {
     if (!user) {
@@ -168,15 +185,12 @@
       return;
     }
 
+    document.getElementById("userInfo").innerText = user.email;
+
     if (user.email === adminEmail) {
-      document.getElementById("topbar").style.display = "flex";
+      document.getElementById("adminControls").style.display = "flex";
     }
   });
-
-  // Logout
-  function logout() {
-    auth.signOut().then(() => location.href = "index.html");
-  }
 </script>
 
 </body>
