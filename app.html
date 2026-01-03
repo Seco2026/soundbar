@@ -38,13 +38,14 @@ body {
   align-items: center;
   flex-wrap: wrap;
 }
-input[type=file], select, #uploadBtn {
+input[type=file], select, #uploadBtn, #logoutBtn {
   padding: 8px;
   font-size: 14px;
   border-radius: 5px;
   border: none;
 }
 #uploadBtn { background:#28a745; color:white; cursor:pointer; }
+#logoutBtn { background:#c0392b; color:white; cursor:pointer; }
 
 /* --- Grid med 3 kolumner --- */
 #grid {
@@ -55,10 +56,10 @@ input[type=file], select, #uploadBtn {
   flex-grow: 1;
 }
 
-/* --- Knappar kvadratiska --- */
+/* --- Knappar kvadratiska med 3D-effekt --- */
 #grid button {
   width: 100%;
-  aspect-ratio: 1 / 1; /* gör kvadratisk knapp */
+  aspect-ratio: 1 / 1; /* kvadrat */
   border-radius: 15px;
   border: none;
   font-size: 16px;
@@ -83,6 +84,7 @@ input[type=file], select, #uploadBtn {
     <select id="btnSelect"></select>
     <input type="file" id="fileInput" accept="audio/*">
     <button id="uploadBtn">Byt ljud</button>
+    <button id="logoutBtn">Logga ut</button>
   </div>
 </div>
 
@@ -161,18 +163,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   document.getElementById("uploadBtn").addEventListener("click", uploadSound);
 
+  // --- Logga ut ---
+  const logoutBtn = document.getElementById("logoutBtn");
+  logoutBtn.addEventListener("click", () => {
+    auth.signOut()
+      .then(() => {
+        alert("✅ Utloggad");
+        document.getElementById("adminControls").style.display = "none";
+        document.getElementById("userInfo").textContent = "Ej inloggad";
+      })
+      .catch(err => {
+        console.error("❌ Logout fel:", err);
+        alert("❌ Fel vid utloggning");
+      });
+  });
+
   // --- Auth ---
-  auth.onAuthStateChanged(user=>{
+  auth.onAuthStateChanged(user => {
     if(!user){
-      document.getElementById("userInfo").textContent="Ej inloggad";
-      document.getElementById("adminControls").style.display="none";
+      document.getElementById("userInfo").textContent = "Ej inloggad";
+      document.getElementById("adminControls").style.display = "none";
       return;
     }
     document.getElementById("userInfo").textContent = user.email;
-    if(user.email===ADMIN_EMAIL){
-      document.getElementById("adminControls").style.display="flex";
+    if(user.email === ADMIN_EMAIL){
+      document.getElementById("adminControls").style.display = "flex";
     } else {
-      document.getElementById("adminControls").style.display="none";
+      document.getElementById("adminControls").style.display = "none";
     }
   });
 
